@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Geotiff Demo</title>
+<link rel="stylesheet" href="css/leaflet.css"/>
+<link rel="stylesheet" href="css/font-awesome-4.2.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="css/index.css"/>
+<link rel="stylesheet" href="css/d3.slider.css" />
+<link rel="stylesheet" href="css/jquery-ui.css">
+<link rel="stylesheet" href="css/c3.min.css" />
+<link rel="stylesheet" href="css/leaflet-areaselect.css" />
+<link rel="stylesheet" href="css/locationfilter/locationfilter.css" />
+<link rel="stylesheet" href="css/bootstrap-css/bootstrap.min.css" />
+<link rel="stylesheet" href="css/bootstrap-css/bootstrap-theme.min.css" />
+<link rel="stylesheet" href="css/bootstrap-dialog.css" />
+<link rel="stylesheet" href="css/bootstrap-slider.css" />
+<!-- <link rel="stylesheet" href="css/dragdealer.css" /> -->
+<script>L_PREFER_CANVAS = true;</script>
+<script type ="text/javascript" src="lib/leaflet.js"></script>
+<!-- <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script> -->
+<script type ="text/javascript" src="lib/jquery-2.1.1.min.js"></script>
+<script type ="text/javascript" src="lib/jquery-ui-1.11.0/jquery-ui.js"></script>
+<script type ="text/javascript" src="lib/d3/d3.min.js"></script>
+<script type ="text/javascript" src="lib/d3.slider.js"></script>
+<script type="text/javascript" src="lib/c3.min.js"></script>
+<script type="text/javascript" src="lib/shp.min.js"></script>
+<script type="text/javascript" src="lib/easy-button.js"></script>
+<script type="text/javascript" src="lib/leaflet-areaselect.js"></script>
+<script type="text/javascript" src="lib/bootstrap.min.js"></script>
+<script type="text/javascript" src="lib/bootstrap-dialog.js"></script>
+<script type="text/javascript" src="lib/bootstrap-slider.js"></script>
+<script type = "text/javascript" src="lib/dragdealer.js"></script>
+<script type = "text/javascript" src="/socket.io/socket.io.js"></script>
+<script type = "text/javascript" src = "javascript/public/imgFastGeneration.js"></script> 
+<script type = "text/javascript" src = "javascript/public/imageGenerator.js"></script> 
+<script type = "text/javascript" src = "javascript/public/eventFunc.js"></script>
+<script type = "text/javascript" src = "javascript/public/createColorMapper.js"></script>
+<script type = "text/javascript" src = "javascript/index/globalVariables.js"></script> 
+<script type = "text/javascript" src = "javascript/index/addNewElem2Matrix.js"></script> 
+<script type = "text/javascript" src = "javascript/index/LoadParamsOptions.js"></script> 
+<script type = "text/javascript" src = "javascript/index/createMatrix.js"></script> 
+<script type = "text/javascript" src = "javascript/index/createMapIcons.js"></script>
+<script type = "text/javascript" src = 'javascript/index/createTimeseries.js'></script> 
+<script type = "text/javascript" src = "javascript/index/projectImg2Map.js"></script> 
+<script type = "text/javascript" src = "javascript/index/mapLegendInfo.js"></script> 
+<script type = "text/javascript" src = "javascript/index/drawShapeFile.js"></script>
+<script type = "text/javascript" src = "javascript/index/stationChart.js"></script>
+<script type = "text/javascript" src = "javascript/index/plotPopMap.js"></script> 
+<script type = "text/javascript" src = "javascript/index/plotScaricityMap.js"></script> 
+<script type = "text/javascript" src = "javascript/index/plotWaterMap.js"></script>
+<script type = "text/javascript" src = "javascript/index/loadWaterLayers.js"></script>
+<script type = "text/javascript" src = "javascript/index/readyFunc.js"></script>
+
+</head>
+<body>
+    <div id="container" class="container"></div>
+    <div id="blackOverlay" class="blackOverlay"></div>
+    <div class="wrapper">
+        <div id="mapWrapper">
+            <div id="scarcityMap"></div>
+            <div id="waterMap"></div>
+        </div> 
+        <div id="popMap"></div>
+        <div id='MatrixParamTimeContainer'>
+            <div id='timeSeries'>  </div>
+            <div id="configurationZone">
+                  <div id="modelParamsZone">
+                        <div id="expDiv">
+                            Emission:
+                            <select id="EXPCombo"></select>
+                        </div>
+                        <div id="gcmDiv">
+                            GCM:
+                            <select id="GCMCombo"></select>
+                        </div>
+                        <div id="rcmDiv">
+                            RCM:
+                            <select id="RCMCombo"></select>
+                        </div>
+                        <div id="varDiv">
+                            VAR:
+                            <select id="VARCombo"></select>
+                        </div>
+                        <div id="yearDiv">
+                            YEARTYPE:
+                            <select id="YEARTYPECombo"></select>
+                        </div>
+                        <div id="populationParamsZone">
+                            Population:
+                            <select id="POPCombo"></select>
+                        </div>
+                        <div id="popGrowthRate" class='sliderZone'>
+                            <div id='popGrowthRateText' class='sliderText'>Growth Rate: 1%</div>
+                            <!-- <input id="popGrowthRateSlider" type="text" data-slider-min="1" data-slider-max="5" data-slider-step="1" data-slider-value="1"/> -->
+                            <div id='popGrowthRateSlider' class='slider'></div>
+                        </div>
+                        <div id='timeZone' class='sliderZone'> 
+                            <div id='timeZoneText'  class='sliderText'>Year: 1960</div>
+                            <div id='timeZoneSlider'  class='slider'></div>
+                        </div>
+                        <div id="saveDiv">
+                            <input type='button' name='savaParams' value='saveParams' onClick='saveParameters()'/>
+                        </div>
+                        <div id="snapPoolDiv">
+                            <input type='button' name='openSnapPool' value='openSnapPool' onClick='openSnapPoolDiv()'/>
+                        </div>
+                        <div id="prjDiv">
+                            <input type="button" name="addNewMap" value="Load New Water Images" onClick="addImgToMaps()"/>
+                        </div>
+                  </div>
+            </div>
+            <div id='shareDiv'>
+                  <div id="selection" class="selection"></div>
+                  <input type='radio' id='switchMode1' name='Personal Mode' value='1' />
+                  <input type='radio' id='switchMode2' name='Share Mode' value='0' />
+            </div>
+        </div>
+    </div>
+  
+<script src="javascript/index/map.js"></script>
+<script>
+    loadStationTimeSeries('_Raw.csv');
+    loadStationTimeSeries('_BiasCorr.csv');
+</script>
+</body>
+</html>
