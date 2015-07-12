@@ -16,9 +16,8 @@ public class TiffParser {
 	private double[] data;
 	private double[] size;
 	
-	
 	private String filePath;
-	private int xoff, yoff, xSize, ySize;
+	public int xoff, yoff, xSize, ySize;
 	private double[] geoInfo;
 	private String projRef;
 	
@@ -64,7 +63,7 @@ public class TiffParser {
 	}
 
 	public int getxSize() {
-		return xSize;
+		return this.xSize;
 	}
 
 	public void setxSize(int xSize) {
@@ -72,7 +71,7 @@ public class TiffParser {
 	}
 
 	public int getySize() {
-		return ySize;
+		return this.ySize;
 	}
 
 	public void setySize(int ySize) {
@@ -95,31 +94,31 @@ public class TiffParser {
 		
 			Driver hDriver = hDataset.GetDriver();
 			Band hBand = hDataset.GetRasterBand(1);
-			int xSize = hDataset.getRasterXSize();
-			int ySize = hDataset.getRasterYSize();
+			this.xSize = hDataset.getRasterXSize();
+			this.ySize = hDataset.getRasterYSize();
 			double[] sizeArr = {ySize, xSize};
 			this.size = sizeArr;
 			
-			double[] pixelData = new double[xSize * ySize];
-			int err = hBand.ReadRaster(0, 0, xSize, ySize, gdalconst.GDT_Float64, pixelData);
+			double[] pixelData = new double[this.xSize * this.ySize];
+			int err = hBand.ReadRaster(0, 0, this.xSize, this.ySize, gdalconst.GDT_Float64, pixelData);
 			if(err==gdalconst.CE_Failure)
 			{
 				System.out.println("Getting Data Error! An Error occured in getting pixel value in Dissolved One!");
 			}				
 
-//			System.out.println("Driver: " + hDriver.getShortName() + "/"
-//					+ hDriver.getLongName());
+			System.out.println("Driver: " + hDriver.getShortName() + "/"
+					+ hDriver.getLongName());
 //
-//			System.out.println("Size is " + xSize + ", " + ySize);
+			System.out.println("Size is " + this.xSize + ", " + this.ySize);
 
 			// get geo information of tiff
 			double[] geoInfo = hDataset.GetGeoTransform();
 			String projRef = hDataset.GetProjectionRef();
-//			System.out.println(geoInfo[0]);// upper-left longitude
-//			System.out.println(geoInfo[1]);//pixel width, lng
-//			System.out.println(geoInfo[2]);
-//			System.out.println(geoInfo[3]);// upper-left latitude
-//			System.out.println(geoInfo[4]);
+			System.out.println(geoInfo[0]);// upper-left longitude
+			System.out.println(geoInfo[1]);//pixel width, lng
+			System.out.println(geoInfo[2]);
+			System.out.println(geoInfo[3]);// upper-left latitude
+			System.out.println(geoInfo[4]);
 //			System.out.println(geoInfo[5]);// pixel height, lat
 
 			// get statistical information about tiff
@@ -165,7 +164,7 @@ public class TiffParser {
 			
 //			this.statistics[2] = dfMean[0];
 //			this.statistics[3] = dfstddev[0];
-			this.data = new double[xSize*ySize];
+			this.data = new double[this.xSize*this.ySize];
 //			for(int i=0; i<xSize*ySize; i++){
 //				data[i] = pixelData[i];
 //			}

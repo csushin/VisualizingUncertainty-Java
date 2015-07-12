@@ -1,12 +1,12 @@
 package edu.asu.waterDemo.main;
 
-import java.io.BufferedReader;
+//import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+//import java.io.InputStreamReader;
+//import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.Collections;
+//import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -18,8 +18,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.http.HttpResponse;
+/*import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
@@ -31,19 +30,19 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClients;*/
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
-import com.google.common.io.Files;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
+//import com.google.common.io.Files;
+//import com.mongodb.BasicDBList;
+//import com.mongodb.BasicDBObject;
+//import com.mongodb.DB;
+//import com.mongodb.DBCollection;
+//import com.mongodb.DBCursor;
 
 import edu.asu.waterDemo.bean.DrawScarcitymapBean;
 import edu.asu.waterDemo.bean.ListPointsBean;
@@ -59,17 +58,20 @@ public class DrawScarcitymap {
 	
 	String supplyDir;
 	String demandDir;
-	String linux_supplyDir;
-	String linux_demandDir;
-	String linux_scarcityDir;
+	String scarcityDir;
 	
 	@Context
 	public void setServletContext(ServletContext context) {
-		supplyDir = context.getRealPath("img") + File.separatorChar;
-		demandDir = context.getRealPath("img/demand") + File.separatorChar;
-		linux_demandDir = "/work/asu/data/wdemand/popden_pred/";
-		linux_supplyDir = "/work/asu/data/wsupply/"; 
-		linux_scarcityDir = "/work/asu/data/wscarcity/"; 
+//		if(SystemUtils.IS_OS_LINUX){
+			demandDir = "/work/asu/data/wdemand/popden_pred/";
+			supplyDir = "/work/asu/data/wsupply/"; 
+			scarcityDir = "/work/asu/data/wscarcity/"; 			
+//		}
+//		else{
+//			supplyDir = context.getRealPath("img/scarcity") + File.separatorChar;
+//			demandDir = context.getRealPath("img/demand") + File.separatorChar;
+//			scarcityDir = context.getRealPath("img/supply") + File.separatorChar;			
+//		}
 	}
 	
 	@GET
@@ -79,7 +81,7 @@ public class DrawScarcitymap {
 			@QueryParam("supplyfName") @DefaultValue("null") String supplyfName,
 			@QueryParam("supplySubDir") @DefaultValue("null") String supplySubDir,
 			@QueryParam("demandfName") @DefaultValue("null") String demandfName,
-			@QueryParam("resolution") @DefaultValue("raw") String resolution) throws ClientProtocolException, IOException {
+			@QueryParam("resolution") @DefaultValue("raw") String resolution) throws IOException {
 		DrawScarcitymapBean result = new DrawScarcitymapBean();
 		
 		if(message.equals("requestScarcity"))
@@ -88,8 +90,8 @@ public class DrawScarcitymap {
 				TiffParser popParser = new TiffParser();
 				TiffParser waterParser = new TiffParser();
 				double[] size = {360, 720};
-				String supplyPath = linux_supplyDir + "BW_10km/" + supplySubDir + "/" + supplyfName;
-				String demandPath = linux_demandDir + "resampled_10km/" + demandfName;
+				String supplyPath = supplyDir + "BW_10km/" + supplySubDir + "/" + supplyfName;
+				String demandPath = demandDir + "resampled_10km/" + demandfName;
 				popParser.setFilePath(demandPath);
 				waterParser.setFilePath(supplyPath);
   				if(popParser.parser() && waterParser.parser()){	
@@ -164,7 +166,7 @@ public class DrawScarcitymap {
 //				double[] size = {3600, 7200};
 				boolean createFlag = false;
 				String scarcityName = demandfName.replace(".tif", "") + "_" + supplyfName;
-				String outputfile = linux_scarcityDir + scarcityName;
+				String outputfile = scarcityDir + scarcityName;
 				GeoserverService geoserver = new GeoserverService(scarcityName.replace(".tif", ""), outputfile, port, ws, style);
 				if(geoserver.isExistance()){
 					result.created = true;
@@ -182,8 +184,8 @@ public class DrawScarcitymap {
 					}
 //					create newdata
 					if(createFlag){
-						String supplyPath = linux_supplyDir + "BW_1km/" + supplySubDir + "/" + supplyfName;
-						String demandPath = linux_demandDir + demandfName;
+						String supplyPath = supplyDir + "BW_1km"  + File.separatorChar + supplySubDir + File.separatorChar + supplyfName;
+						String demandPath = demandDir + demandfName;
 						popParser.setFilePath(demandPath);
 						waterParser.setFilePath(supplyPath);
 						System.out.println("supply path: " + supplyPath);
@@ -203,6 +205,7 @@ public class DrawScarcitymap {
 									int popIndex = (h+deltaY)*popParser.getySize() + (w+deltaX);
 									double popVal = popData[popIndex];
 									double waterVal = waterData[wIndex];
+									System.out.println("popValue is " + popVal + " water Val" + waterVal);
 									if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
 										if(popVal>=1 && waterVal>=0){
 											double scarVal = waterVal*1000/popVal;
@@ -218,7 +221,14 @@ public class DrawScarcitymap {
 									}
 								}
 							}
-							int writeResult = writeGeotiff(buf, waterParser, outputfile);
+							Driver driver = gdal.GetDriverByName("GTiff");
+							System.out.println(waterParser.getGeoInfo().toString());
+							System.out.println(waterParser.getxSize());
+							System.out.println(waterParser.getySize());
+							Dataset dst_ds = driver.Create(outputfile, waterParser.getxSize(), waterParser.getySize(), 1, gdalconst.GDT_Float64);
+							dst_ds.SetGeoTransform(waterParser.getGeoInfo());
+							dst_ds.SetProjection(waterParser.getProjRef());
+							int writeResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, waterParser.getxSize(), waterParser.getySize(), buf);
 							System.out.println("Result for writing geotiff files: " + writeResult);							
 				
 						}
@@ -244,20 +254,6 @@ public class DrawScarcitymap {
 		return result;
 	}
 	
-	private int writeGeotiff(double[] buf, TiffParser targetParser, String outputfile){
-		Driver driver = gdal.GetDriverByName("GTiff");
-		int result = 1;
-		System.out.println(targetParser.getGeoInfo().toString());
-		System.out.println(targetParser.getxSize());
-		System.out.println(targetParser.getxSize());
-		Dataset dst_ds = driver.Create(outputfile, targetParser.getxSize(), targetParser.getySize(), 1, gdalconst.GDT_Float64);
-		dst_ds.SetGeoTransform(targetParser.getGeoInfo());
-		dst_ds.SetProjection(targetParser.getProjRef());
-		result = dst_ds.GetRasterBand(1).WriteRaster(0, 0, targetParser.getxSize(), targetParser.getySize(), buf);
-		System.out.println("Geotiff Created!");	
-		
-		return result;
-	}
 
 	public String parseName(String fName){
 		String _fName = fName.replace(".tif", "");
@@ -266,73 +262,73 @@ public class DrawScarcitymap {
 		return __fName[__fName.length-1];
 	}
 	
-	public double[] calScarcity(TiffParser waterParser, TiffParser popParser){
-		double[] latArr = new double[4];
-		latArr[0] = waterParser.getUlLatlng()[0];
-		latArr[1] = waterParser.getLrLatlng()[0];
-		latArr[2] = popParser.getUlLatlng()[0];
-		latArr[3] = popParser.getLrLatlng()[0];
-		double[] lngArr = new double[4];
-		lngArr[0] = waterParser.getUlLatlng()[1];
-		lngArr[1] = waterParser.getLrLatlng()[1];
-		lngArr[2] = popParser.getUlLatlng()[1];
-		lngArr[3] = popParser.getLrLatlng()[1];
-		
-		//sort each array and get the medium value
-		Arrays.sort(latArr);// sorted from the smallest to biggest
-		Arrays.sort(lngArr);
-		double[] interUL = new double[2];
-		double[] interLR = new double[2];
-		interUL[0] = latArr[2];//max latitude, max means the second max
-		interUL[1] = lngArr[1];//min longitude
-		interLR[0] = latArr[1];//min latitude
-		interLR[1] = lngArr[2];//max longitude
-		System.out.println(interUL[0] +" " +interUL[1] + " " + interLR[0] + " " + interLR[1]);
-		
-		//get the sizeo of the interseceted part in each data
-		double[] popInterSize = new double[2];
-		double[] waterInterSize = new double[2];
-		System.out.println("pop interSize h and w:" + popInterSize[0] + " " + popInterSize[1]);
-		
-		//get the original data for each intersection part in original data
-		double[] waterInter = findSingleIntersection(waterParser,  interUL, interLR, waterInterSize);
-		double[] popInter = findSingleIntersection(popParser, interUL, interLR, popInterSize);
-		System.out.println("intersected size: "+waterInter.length);
-		System.out.println("intersected size: "+popInter.length);
-		
-		//here take the larger picture, pop density, as the target size
-		//but to save the calculation process, we take the targeSize as 300*300
-		double targetSize[] = new double[] {100, 100};
-		double[] srcWaterSize= waterParser.getPixelHW();
-		double[] srcPopSize = popParser.getPixelHW();
-		//scale the smaller image, water, to the larger target size
-		double[] scaledPop = scaleTiff(popInter, popInterSize, targetSize);
-		System.out.println("scaled water size: "+ scaledPop.length);
-		double[] scaledWater = scaleTiff(waterInter, waterInterSize, targetSize);
-		System.out.println("scaled water size: "+ scaledWater.length);
-		
-		double[] finalScaricty = calculateScarcity(scaledPop, scaledWater, targetSize);
-		System.out.println("final water scarcity size: "+ finalScaricty.length);
-		
-		// return the basic scarcity data information
-		this.size = targetSize;
-		this.ulLatlng = interUL;
-		this.lrLatlng = interLR;
-		
-		double[] geoUnit = new double[2];
-		geoUnit[0] = (interUL[0]-interLR[0])/targetSize[0];
-		geoUnit[1] = (interUL[1]-interLR[1])/targetSize[1];
-		this.geoInfoUnit = geoUnit;
-		
-		//get the min and max value
-		List temp = Arrays.asList(ArrayUtils.toObject(finalScaricty));
-		double min = Collections.min(temp);
-		double max = Collections.max(temp);
-		double[] stat = new double[] {min, max};
-		this.statistics = stat;
-		System.out.println("check stat info:" + this.statistics[0] + "," + this.statistics[1]);
-		return finalScaricty;
-	}
+//	public double[] calScarcity(TiffParser waterParser, TiffParser popParser){
+//		double[] latArr = new double[4];
+//		latArr[0] = waterParser.getUlLatlng()[0];
+//		latArr[1] = waterParser.getLrLatlng()[0];
+//		latArr[2] = popParser.getUlLatlng()[0];
+//		latArr[3] = popParser.getLrLatlng()[0];
+//		double[] lngArr = new double[4];
+//		lngArr[0] = waterParser.getUlLatlng()[1];
+//		lngArr[1] = waterParser.getLrLatlng()[1];
+//		lngArr[2] = popParser.getUlLatlng()[1];
+//		lngArr[3] = popParser.getLrLatlng()[1];
+//		
+//		//sort each array and get the medium value
+//		Arrays.sort(latArr);// sorted from the smallest to biggest
+//		Arrays.sort(lngArr);
+//		double[] interUL = new double[2];
+//		double[] interLR = new double[2];
+//		interUL[0] = latArr[2];//max latitude, max means the second max
+//		interUL[1] = lngArr[1];//min longitude
+//		interLR[0] = latArr[1];//min latitude
+//		interLR[1] = lngArr[2];//max longitude
+//		System.out.println(interUL[0] +" " +interUL[1] + " " + interLR[0] + " " + interLR[1]);
+//		
+//		//get the sizeo of the interseceted part in each data
+//		double[] popInterSize = new double[2];
+//		double[] waterInterSize = new double[2];
+//		System.out.println("pop interSize h and w:" + popInterSize[0] + " " + popInterSize[1]);
+//		
+//		//get the original data for each intersection part in original data
+//		double[] waterInter = findSingleIntersection(waterParser,  interUL, interLR, waterInterSize);
+//		double[] popInter = findSingleIntersection(popParser, interUL, interLR, popInterSize);
+//		System.out.println("intersected size: "+waterInter.length);
+//		System.out.println("intersected size: "+popInter.length);
+//		
+//		//here take the larger picture, pop density, as the target size
+//		//but to save the calculation process, we take the targeSize as 300*300
+//		double targetSize[] = new double[] {100, 100};
+//		double[] srcWaterSize= waterParser.getPixelHW();
+//		double[] srcPopSize = popParser.getPixelHW();
+//		//scale the smaller image, water, to the larger target size
+//		double[] scaledPop = scaleTiff(popInter, popInterSize, targetSize);
+//		System.out.println("scaled water size: "+ scaledPop.length);
+//		double[] scaledWater = scaleTiff(waterInter, waterInterSize, targetSize);
+//		System.out.println("scaled water size: "+ scaledWater.length);
+//		
+//		double[] finalScaricty = calculateScarcity(scaledPop, scaledWater, targetSize);
+//		System.out.println("final water scarcity size: "+ finalScaricty.length);
+//		
+//		// return the basic scarcity data information
+//		this.size = targetSize;
+//		this.ulLatlng = interUL;
+//		this.lrLatlng = interLR;
+//		
+//		double[] geoUnit = new double[2];
+//		geoUnit[0] = (interUL[0]-interLR[0])/targetSize[0];
+//		geoUnit[1] = (interUL[1]-interLR[1])/targetSize[1];
+//		this.geoInfoUnit = geoUnit;
+//		
+//		//get the min and max value
+//		List temp = Arrays.asList(ArrayUtils.toObject(finalScaricty));
+//		double min = (double) Collections.min(temp);
+//		double max = (double) Collections.max(temp);
+//		double[] stat = new double[] {min, max};
+//		this.statistics = stat;
+//		System.out.println("check stat info:" + this.statistics[0] + "," + this.statistics[1]);
+//		return finalScaricty;
+//	}
 	
 	public double[] findSingleIntersection(TiffParser parser, double[] interUL, double[] interLR, double[] interSize){
 		// for the width, the smaller minus the larger would get the negative value but the unit is negative too
