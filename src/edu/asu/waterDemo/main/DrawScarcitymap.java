@@ -188,7 +188,6 @@ public class DrawScarcitymap {
 						String demandPath = demandDir + demandfName;
 						popParser.setFilePath(demandPath);
 						waterParser.setFilePath(supplyPath);
-						System.out.println("supply path: " + supplyPath);
 						if(popParser.parser() && waterParser.parser()){	
 							double[] popData = popParser.getData();
 							double[] waterData = waterParser.getData();
@@ -202,19 +201,20 @@ public class DrawScarcitymap {
 							for(int h=0; h<waterParser.getySize() ;h++){
 								for(int w=0; w<waterParser.getxSize(); w++){
 									int wIndex = h*waterParser.getxSize()+w;
-									int popIndex = (h+deltaY)*popParser.getySize() + (w+deltaX);
+									int popIndex = (h+deltaY)*popParser.getxSize() + (w+deltaX);
 									double popVal = popData[popIndex];
 									double waterVal = waterData[wIndex];
-									System.out.println("popValue is " + popVal + " water Val" + waterVal);
 									if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
 										if(popVal>=1 && waterVal>=0){
 											double scarVal = waterVal*1000/popVal;
 											buf[wIndex] = scarVal;
+//											System.out.println("supply path: " + supplyPath + " \n demand path is: " + demandPath);
+//											System.out.println("popValue is " + popVal + " water Val" + waterVal);
 										}
-										else if(popVal<1 && popVal>=0 && waterVal>=0){
+										else if(popVal<1 && waterVal>=0){
 											double scarVal = 1701;
 											buf[wIndex] = scarVal;
-										}								
+										}		
 									}
 									else{
 										buf[wIndex] = -1;
