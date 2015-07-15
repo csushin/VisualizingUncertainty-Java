@@ -186,8 +186,6 @@ public class CalcUncertaintyMap {
 		ArrayList<TiffParser> sParserArr = new ArrayList<TiffParser>();
 		double[] sSize = {};
 		double[] dSize = dParser.getSize();
-		double[] supplyStartPoint = {};//(lat, lng)
-		double[] supplyEndPoint = {};
 		for(int i=0; i<sPathList.size(); i++){
 			String curSupplyPath = sPathList.get(i);
 			boolean isExisted = new File(curSupplyPath).exists();
@@ -203,8 +201,6 @@ public class CalcUncertaintyMap {
 			if(sParser.parser()){
 				sParserArr.add(sParser);
 				sSize = sParser.getSize();
-				supplyStartPoint = sParser.getUlLatlng();
-				supplyEndPoint = sParser.getLrLatlng();
 			}
 			else {
 				System.out.println("Error in parsing supply files!");
@@ -214,163 +210,270 @@ public class CalcUncertaintyMap {
 		double[] buf = new double[(int) (sSize[0]*sSize[1])];
 		int index = 0;
 		if(dParser.parser() && !sParserArr.isEmpty()){
-			int srcWidth = (int) sSize[0];
-			int srcHeight = (int) sSize[1];
-			double maxEntropy=0, minEntropy = 999999;
-			for(int h=0; h<srcHeight; h++){
-				for(int w=0; w<srcWidth; w++){
-					double lng = dParser.getGeoInfo()[0] + dParser.getGeoInfo()[1]*w;
-					double lat = dParser.getGeoInfo()[3] + dParser.getGeoInfo()[5]*h;
-//					index = h*srcWidth+w;
-//					System.out.println("lat: " + lat + " lng: "+ lng + " supplyStart: " + supplyStartPoint[0]);
-					if(lat>=supplyStartPoint[0] && lat<=supplyEndPoint[0] && lng>=supplyStartPoint[1] && lng<=supplyStartPoint[1]){
-						index++;
-						double popVal = dParser.getData()[index];
-						ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
-						int sum = 0;
-						boolean nullFlag = false;
-						for(int k=0; k<sParserArr.size(); k++){
-							double curSupplyVal = sParserArr.get(k).getData()[index];
-							if(!Double.isNaN(curSupplyVal) && curSupplyVal<0){
-								curSupplyVal = 0;
-							}
-							double scarVal = 0;
-							if(!Double.isNaN(popVal)){
-								if(popVal>=1){
-									scarVal =  curSupplyVal*1000/popVal;
-								}
-								else if(popVal<1){
-									scarVal = 1701;
-								}								
-							}
-							else{
-								scarVal = -1;
-							}
-//							set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
-							int flag;
-							if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;}
-							else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;}
-							else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;}
-							else if(scarVal>1700)	{flag = 4;sum+=flag;}
-							else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
-							supplyValArr.add(flag);
+			int tgtHeight = (int)sSize[0];
+			int tgtWidth = (int)sSize[1];
+			int deltaX = 0;
+			int deltaY = 0;
+			if(dParser.getxSize() != sParserArr.get(0).getxSize() || dParser.getySize() != sParserArr.get(0).getySize()){
+				deltaX = dParser.getxSize() - sParserArr.get(0).getxSize();
+				deltaY = dParser.getySize() - sParserArr.get(0).getySize();
+			}
+			for(int h=0; h<tgtHeight; h++){
+				for(int w=0; w<tgtWidth; w++){
+					int tgtIndex = h*tgtWidth+w;
+					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
+					double popVal = dParser.getData()[popIndex];
+					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
+					int sum = 0;
+					boolean nullFlag = false;
+					for(int k=0; k<sParserArr.size(); k++){
+						double curSupplyVal = sParserArr.get(k).getData()[index];
+						if(!Double.isNaN(curSupplyVal) && curSupplyVal<0){
+							curSupplyVal = 0;
 						}
-						int maxNum = 0, maxIndex = 0;
-						double mean = (double) (sum/(double)supplyValArr.size());
-						if(uncertaintyType.equalsIgnoreCase("agree")){
-							buf[index] = calcVotings(nullFlag, sum, supplyValArr);
-						}
-						else if(uncertaintyType.equalsIgnoreCase("deviation") || uncertaintyType.equalsIgnoreCase("variance")){
-							buf[index] = calcDeviation(nullFlag, sum, supplyValArr);
-						}
-						else if(uncertaintyType.equalsIgnoreCase("entropy")){
-							buf[index] = calcEntropy(nullFlag, sum, supplyValArr);
-						}
-						else if(uncertaintyType.equalsIgnoreCase("disagree")){
-							if(!nullFlag){
-								Set<Integer> s = new HashSet<Integer>(supplyValArr);
-								maxNum = s.size();		
-								buf[index] = maxNum;
+						double scarVal = 0;
+						if(!Double.isNaN(popVal)){
+							if(popVal>=1){
+								scarVal =  curSupplyVal*1000/popVal;
 							}
-							else
-								buf[index] = -1;
-						}
-						else if(uncertaintyType.equalsIgnoreCase("MeanDeviation")){
-							double deviation = calcDeviation(nullFlag, sum, supplyValArr);
-							if(deviation!=-1){
-								buf[index] = Math.round(mean)*10.0 + deviation;
-							}
-							else{
-								buf[index] = -1;
-							}
-//							if(!nullFlag){
-//								double mean = (double) (sum/(double)supplyValArr.size());
-//								double sqrsum = 0;
-//								double dev = 0;
-//								for(int i=0; i<supplyValArr.size(); i++){
-//									if(Integer.valueOf(supplyValArr.get(i))!=-1){
-//										sqrsum+= Math.pow((Double.valueOf(supplyValArr.get(i))-mean), 2.0);
-//									}
-//								}
-//								dev = Math.sqrt(sqrsum/5);	
-//								meanArr[index] = mean;
-//								varianceArr[index] = variance;
-//								buf[index] = Math.round(mean)*10.0 + variance;
-//							}
-//							else{
-//								meanArr[index] = -1;
-//								varianceArr[index] = -1;
-//							}
-						}
-						else if(uncertaintyType.equalsIgnoreCase("MeanEntropy")){
-							double entropy = calcEntropy(nullFlag, sum, supplyValArr);
-							if(entropy!=-1){
-								buf[index] = Math.round(mean)*10.0 + entropy;
-							}
-							else{
-								buf[index] = -1;
-							}
-//							if(!nullFlag){
-//								double mean = (double) (sum/(double)supplyValArr.size());
-//								double[] occurences = new double[4];
-//								double entropy = 0;
-//								occurences[0] = (Collections.frequency(supplyValArr, 1))/(double)supplyValArr.size();
-//								occurences[1] = (Collections.frequency(supplyValArr, 2))/(double)supplyValArr.size();
-//								occurences[2] = (Collections.frequency(supplyValArr, 3))/(double)supplyValArr.size();
-//								occurences[3] = (Collections.frequency(supplyValArr, 4))/(double)supplyValArr.size();
-//								for(int i=0; i<occurences.length; i++){
-//									if(occurences[i]==0)
-//										occurences[i] = 1;
-//								}
-//								entropy = -(occurences[0]*Math.log(occurences[0]) + occurences[1]*Math.log(occurences[1]) + occurences[2]*Math.log(occurences[2])
-//												+ occurences[3]*Math.log(occurences[3]))/Math.log(2.0);
-//								buf[index] = Math.round(mean)*10.0 + entropy;
-//								if(maxEntropy<entropy)
-//									maxEntropy = entropy;
-//								if(minEntropy>entropy)
-//									minEntropy = entropy;
-//								System.out.println("Maximum Entropy is: " + maxEntropy + " And the minimum Entropy is: " + minEntropy);
-//							}
-//							else{
-//								buf[index] = -1;
-//							}
-						}
-						else if(uncertaintyType.equalsIgnoreCase("MeanVotings")){
-							double rate = calcVotingRates(nullFlag, sum, supplyValArr);
-							if(rate!=-1){
-								buf[index] = Math.round(mean)*10.0 + rate;
-							}
-							else{
-								buf[index] = -1;
-							}
+							else if(popVal<1){
+								scarVal = 1701;
+							}								
 						}
 						else{
-							System.out.println("current uncertainty type is " + uncertaintyType);
-							System.out.println("No uncertainty type can match the input parameters!");
+							scarVal = -1;
+						}
+//						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
+						int flag;
+						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;}
+						else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;}
+						else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;}
+						else if(scarVal>1700)	{flag = 4;sum+=flag;}
+						else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
+						supplyValArr.add(flag);
+					}
+					int maxNum = 0, maxIndex = 0;
+					double mean = (double) (sum/(double)supplyValArr.size());
+					if(uncertaintyType.equalsIgnoreCase("agree")){
+						buf[tgtIndex] = calcVotings(nullFlag, sum, supplyValArr);
+					}
+					else if(uncertaintyType.equalsIgnoreCase("deviation") || uncertaintyType.equalsIgnoreCase("variance")){
+						buf[tgtIndex] = calcDeviation(nullFlag, sum, supplyValArr);
+					}
+					else if(uncertaintyType.equalsIgnoreCase("entropy")){
+						buf[tgtIndex] = calcEntropy(nullFlag, sum, supplyValArr);
+					}
+					else if(uncertaintyType.equalsIgnoreCase("disagree")){
+						if(!nullFlag){
+							Set<Integer> s = new HashSet<Integer>(supplyValArr);
+							maxNum = s.size();		
+							buf[tgtIndex] = maxNum;
+						}
+						else
+							buf[tgtIndex] = -1;
+					}
+					else if(uncertaintyType.equalsIgnoreCase("MeanDeviation")){
+						double deviation = calcDeviation(nullFlag, sum, supplyValArr);
+						if(deviation!=-1){
+							buf[tgtIndex] = Math.round(mean)*10.0 + deviation;
+						}
+						else{
+							buf[tgtIndex] = -1;
+						}
+					}
+					else if(uncertaintyType.equalsIgnoreCase("MeanEntropy")){
+						double entropy = calcEntropy(nullFlag, sum, supplyValArr);
+						if(entropy!=-1){
+							buf[tgtIndex] = Math.round(mean)*10.0 + entropy;
+						}
+						else{
+							buf[tgtIndex] = -1;
+						}
+					}
+					else if(uncertaintyType.equalsIgnoreCase("MeanVotings")){
+						double rate = calcVotingRates(nullFlag, sum, supplyValArr);
+						if(rate!=-1){
+							buf[tgtIndex] = Math.round(mean)*10.0 + rate;
+						}
+						else{
+							buf[tgtIndex] = -1;
 						}
 					}
 					else{
-						System.out.println("the start and end point of the data have some error!");
+						System.out.println("current uncertainty type is " + uncertaintyType);
+						System.out.println("No uncertainty type can match the input parameters!");
+					}		
+					if(buf[index]>0 && buf[index]!=40){
+						System.out.println("demand Path is :" + dPath + " supply Path is: " + sPathList.get(0));
+						System.out.println(" buf[index] is: " + buf[tgtIndex]);						
 					}
-
 				}
 			}
-
-			
 			Driver driver = gdal.GetDriverByName("GTiff");
-				
-			Dataset dst_ds = driver.Create(outputfile, (int)sSize[1], (int)sSize[0], 1, gdalconst.GDT_Float64);
+			
+			Dataset dst_ds = driver.Create(outputfile, (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
 			dst_ds.SetGeoTransform(sParserArr.get(0).getGeoInfo());
 			dst_ds.SetProjection(sParserArr.get(0).getProjRef());
-			dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)sSize[1], (int)sSize[0], buf);
-			return true;				
-			
-
+			dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, buf);
+			return true;
 		}
 		else{
 			System.out.println("parse Error in path!");
 			return false;	
 		}
+//		if(dParser.parser() && !sParserArr.isEmpty()){
+//			int srcWidth = (int) sSize[0];
+//			int srcHeight = (int) sSize[1];
+//			double maxEntropy=0, minEntropy = 999999;
+//			for(int h=0; h<srcHeight; h++){
+//				for(int w=0; w<srcWidth; w++){
+//					double lng = dParser.getGeoInfo()[0] + dParser.getGeoInfo()[1]*w;
+//					double lat = dParser.getGeoInfo()[3] + dParser.getGeoInfo()[5]*h;
+//					if(lat>=supplyStartPoint[0] && lat<=supplyEndPoint[0] && lng>=supplyStartPoint[1] && lng<=supplyStartPoint[1]){
+//						index++;
+//						double popVal = dParser.getData()[index];
+//						ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
+//						int sum = 0;
+//						boolean nullFlag = false;
+//						for(int k=0; k<sParserArr.size(); k++){
+//							double curSupplyVal = sParserArr.get(k).getData()[index];
+//							if(!Double.isNaN(curSupplyVal) && curSupplyVal<0){
+//								curSupplyVal = 0;
+//							}
+//							double scarVal = 0;
+//							if(!Double.isNaN(popVal)){
+//								if(popVal>=1){
+//									scarVal =  curSupplyVal*1000/popVal;
+//								}
+//								else if(popVal<1){
+//									scarVal = 1701;
+//								}								
+//							}
+//							else{
+//								scarVal = -1;
+//							}
+////							set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
+//							int flag;
+//							if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;}
+//							else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;}
+//							else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;}
+//							else if(scarVal>1700)	{flag = 4;sum+=flag;}
+//							else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
+//							supplyValArr.add(flag);
+//						}
+//						int maxNum = 0, maxIndex = 0;
+//						double mean = (double) (sum/(double)supplyValArr.size());
+//						if(uncertaintyType.equalsIgnoreCase("agree")){
+//							buf[index] = calcVotings(nullFlag, sum, supplyValArr);
+//						}
+//						else if(uncertaintyType.equalsIgnoreCase("deviation") || uncertaintyType.equalsIgnoreCase("variance")){
+//							buf[index] = calcDeviation(nullFlag, sum, supplyValArr);
+//						}
+//						else if(uncertaintyType.equalsIgnoreCase("entropy")){
+//							buf[index] = calcEntropy(nullFlag, sum, supplyValArr);
+//						}
+//						else if(uncertaintyType.equalsIgnoreCase("disagree")){
+//							if(!nullFlag){
+//								Set<Integer> s = new HashSet<Integer>(supplyValArr);
+//								maxNum = s.size();		
+//								buf[index] = maxNum;
+//							}
+//							else
+//								buf[index] = -1;
+//						}
+//						else if(uncertaintyType.equalsIgnoreCase("MeanDeviation")){
+//							double deviation = calcDeviation(nullFlag, sum, supplyValArr);
+//							if(deviation!=-1){
+//								buf[index] = Math.round(mean)*10.0 + deviation;
+//							}
+//							else{
+//								buf[index] = -1;
+//							}
+////							if(!nullFlag){
+////								double mean = (double) (sum/(double)supplyValArr.size());
+////								double sqrsum = 0;
+////								double dev = 0;
+////								for(int i=0; i<supplyValArr.size(); i++){
+////									if(Integer.valueOf(supplyValArr.get(i))!=-1){
+////										sqrsum+= Math.pow((Double.valueOf(supplyValArr.get(i))-mean), 2.0);
+////									}
+////								}
+////								dev = Math.sqrt(sqrsum/5);	
+////								meanArr[index] = mean;
+////								varianceArr[index] = variance;
+////								buf[index] = Math.round(mean)*10.0 + variance;
+////							}
+////							else{
+////								meanArr[index] = -1;
+////								varianceArr[index] = -1;
+////							}
+//						}
+//						else if(uncertaintyType.equalsIgnoreCase("MeanEntropy")){
+//							double entropy = calcEntropy(nullFlag, sum, supplyValArr);
+//							if(entropy!=-1){
+//								buf[index] = Math.round(mean)*10.0 + entropy;
+//							}
+//							else{
+//								buf[index] = -1;
+//							}
+////							if(!nullFlag){
+////								double mean = (double) (sum/(double)supplyValArr.size());
+////								double[] occurences = new double[4];
+////								double entropy = 0;
+////								occurences[0] = (Collections.frequency(supplyValArr, 1))/(double)supplyValArr.size();
+////								occurences[1] = (Collections.frequency(supplyValArr, 2))/(double)supplyValArr.size();
+////								occurences[2] = (Collections.frequency(supplyValArr, 3))/(double)supplyValArr.size();
+////								occurences[3] = (Collections.frequency(supplyValArr, 4))/(double)supplyValArr.size();
+////								for(int i=0; i<occurences.length; i++){
+////									if(occurences[i]==0)
+////										occurences[i] = 1;
+////								}
+////								entropy = -(occurences[0]*Math.log(occurences[0]) + occurences[1]*Math.log(occurences[1]) + occurences[2]*Math.log(occurences[2])
+////												+ occurences[3]*Math.log(occurences[3]))/Math.log(2.0);
+////								buf[index] = Math.round(mean)*10.0 + entropy;
+////								if(maxEntropy<entropy)
+////									maxEntropy = entropy;
+////								if(minEntropy>entropy)
+////									minEntropy = entropy;
+////								System.out.println("Maximum Entropy is: " + maxEntropy + " And the minimum Entropy is: " + minEntropy);
+////							}
+////							else{
+////								buf[index] = -1;
+////							}
+//						}
+//						else if(uncertaintyType.equalsIgnoreCase("MeanVotings")){
+//							double rate = calcVotingRates(nullFlag, sum, supplyValArr);
+//							if(rate!=-1){
+//								buf[index] = Math.round(mean)*10.0 + rate;
+//							}
+//							else{
+//								buf[index] = -1;
+//							}
+//						}
+//						else{
+//							System.out.println("current uncertainty type is " + uncertaintyType);
+//							System.out.println("No uncertainty type can match the input parameters!");
+//						}
+//					}
+//					else{
+//						System.out.println("the start and end point of the data have some error!");
+//					}
+//
+//				}
+//			}
+//
+//			
+//			Driver driver = gdal.GetDriverByName("GTiff");
+//				
+//			Dataset dst_ds = driver.Create(outputfile, (int)sSize[1], (int)sSize[0], 1, gdalconst.GDT_Float64);
+//			dst_ds.SetGeoTransform(sParserArr.get(0).getGeoInfo());
+//			dst_ds.SetProjection(sParserArr.get(0).getProjRef());
+//			dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)sSize[1], (int)sSize[0], buf);
+//			return true;				
+//			
+//
+//		}
+
 	}
 	
 	public double calcDeviation(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){

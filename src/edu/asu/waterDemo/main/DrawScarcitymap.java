@@ -47,7 +47,6 @@ import org.glassfish.jersey.server.JSONP;
 import edu.asu.waterDemo.bean.DrawScarcitymapBean;
 import edu.asu.waterDemo.bean.ListPointsBean;
 
-
 @Path("/getScarcityPoints")
 public class DrawScarcitymap {
 	private double[] size;
@@ -62,16 +61,19 @@ public class DrawScarcitymap {
 	
 	@Context
 	public void setServletContext(ServletContext context) {
-//		if(SystemUtils.IS_OS_LINUX){
+		String osName = System.getProperty("os.name");
+		String osNameMatch = osName.toLowerCase();
+		if(osNameMatch.contains("linux")) {
 			demandDir = "/work/asu/data/wdemand/popden_pred/";
 			supplyDir = "/work/asu/data/wsupply/"; 
-			scarcityDir = "/work/asu/data/wscarcity/"; 			
-//		}
-//		else{
-//			supplyDir = context.getRealPath("img/scarcity") + File.separatorChar;
-//			demandDir = context.getRealPath("img/demand") + File.separatorChar;
-//			scarcityDir = context.getRealPath("img/supply") + File.separatorChar;			
-//		}
+			scarcityDir = "/work/asu/data/wscarcity/"; 	
+		}
+		else if(osNameMatch.contains("windows")) {
+			System.out.println("Tomcat webapp path is : " + context.getRealPath("img"));
+			supplyDir = context.getRealPath("img/supply") + File.separatorChar;
+			demandDir = context.getRealPath("img/demand") + File.separatorChar;
+			scarcityDir = context.getRealPath("img/scarcity") + File.separatorChar;
+		}
 	}
 	
 	@GET
@@ -196,20 +198,20 @@ public class DrawScarcitymap {
 							int deltaY = 0;
 							if(popParser.getxSize() != waterParser.getxSize() || popParser.getySize() != waterParser.getySize()){
 								deltaX = popParser.getxSize() - waterParser.getxSize();
-								deltaY = waterParser.getySize() - waterParser.getySize();
+								deltaY = popParser.getySize() - waterParser.getySize();
 							}
 							for(int h=0; h<waterParser.getySize() ;h++){
 								for(int w=0; w<waterParser.getxSize(); w++){
 									int wIndex = h*waterParser.getxSize()+w;
-									int popIndex = (h+deltaY)*popParser.getxSize() + (w+deltaX);
+									int popIndex = (h+deltaY)*(waterParser.getxSize()+deltaX) + (w+deltaX);
 									double popVal = popData[popIndex];
 									double waterVal = waterData[wIndex];
 									if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
 										if(popVal>=1 && waterVal>=0){
 											double scarVal = waterVal*1000/popVal;
+//											if(waterVal!=0)
+//												System.out.println("water val is : " + waterVal + " scarcity Val is: " + scarVal);
 											buf[wIndex] = scarVal;
-//											System.out.println("supply path: " + supplyPath + " \n demand path is: " + demandPath);
-//											System.out.println("popValue is " + popVal + " water Val" + waterVal);
 										}
 										else if(popVal<1 && waterVal>=0){
 											double scarVal = 1701;
@@ -222,9 +224,9 @@ public class DrawScarcitymap {
 								}
 							}
 							Driver driver = gdal.GetDriverByName("GTiff");
-							System.out.println(waterParser.getGeoInfo().toString());
-							System.out.println(waterParser.getxSize());
-							System.out.println(waterParser.getySize());
+//							System.out.println(waterParser.getGeoInfo().toString());
+//							System.out.println(waterParser.getxSize());
+//							System.out.println(waterParser.getySize());
 							Dataset dst_ds = driver.Create(outputfile, waterParser.getxSize(), waterParser.getySize(), 1, gdalconst.GDT_Float64);
 							dst_ds.SetGeoTransform(waterParser.getGeoInfo());
 							dst_ds.SetProjection(waterParser.getProjRef());
