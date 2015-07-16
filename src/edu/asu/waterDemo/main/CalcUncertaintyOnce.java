@@ -42,7 +42,19 @@ public class CalcUncertaintyOnce {
 	public void setServletContext(ServletContext context) {
 		String osName = System.getProperty("os.name");
 		String osNameMatch = osName.toLowerCase();
-		if(osNameMatch.contains("linux")) {
+		if(osNameMatch.contains("windows")) {
+			System.out.println("Tomcat webapp path is : " + context.getRealPath("img"));
+			supplyDir = context.getRealPath("img/supply") + File.separatorChar;
+			demandDir = context.getRealPath("img/demand") + File.separatorChar;
+			agreeDir = context.getRealPath("img/supply") + File.separatorChar;// + "agree" + File.separatorChar; 
+			disagreeDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "disagree"+ File.separatorChar;
+			varianceDir = context.getRealPath("img/supply") + File.separatorChar;// + "variance"+ File.separatorChar;
+			entropyDir = context.getRealPath("img/supply") + File.separatorChar;// + "entropy"+ File.separatorChar;
+			meanDeviationDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "MeanDeviation"+ File.separatorChar;
+			meanEntropyDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "MeanEntropy"+ File.separatorChar;
+			meanVotingsDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "MeanVotings";
+		}
+		else{
 			demandDir = "/work/asu/data/wdemand/popden_pred/";
 			supplyDir = "/work/asu/data/wsupply/"; 
 			agreeDir = "/work/asu/data/wuncertainty/agree/"; 
@@ -53,19 +65,6 @@ public class CalcUncertaintyOnce {
 			meanEntropyDir = "/work/asu/data/wuncertainty/MeanEntropy/";
 			meanVotingsDir = "/work/asu/data/wuncertainty/MeanVotings/";
 		}
-		else if(osNameMatch.contains("windows")) {
-			System.out.println("Tomcat webapp path is : " + context.getRealPath("img"));
-			supplyDir = context.getRealPath("img/supply") + File.separatorChar;
-			demandDir = context.getRealPath("img/demand") + File.separatorChar;
-			agreeDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "agree" + File.separatorChar; 
-			disagreeDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "disagree"+ File.separatorChar;
-			varianceDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "variance"+ File.separatorChar;
-			entropyDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "entropy"+ File.separatorChar;
-			meanDeviationDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "MeanDeviation"+ File.separatorChar;
-			meanEntropyDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "MeanEntropy"+ File.separatorChar;
-			meanVotingsDir = context.getRealPath("img/wuncertainty") + File.separatorChar + "MeanVotings";
-		}
-
 	}
 	
 	@GET
@@ -228,13 +227,6 @@ public class CalcUncertaintyOnce {
 		for(int i=0; i<sPathList.size(); i++){
 			String curSupplyPath = sPathList.get(i);
 			boolean isExisted = new File(curSupplyPath).exists();
-//			if(isExisted)
-//				System.out.println(curSupplyPath + " Indeed exists " + sPathList.size() + " supplies !");
-//			else
-//				System.out.println(curSupplyPath + " Not exists!");
-//			System.out.println("the " + i + "th supply file is :" + curSupplyPath);
-//			long heapsize=Runtime.getRuntime().maxMemory();
-//		    System.out.println("heapsize is::"+heapsize);
 			TiffParser sParser = new TiffParser();
 			sParser.setFilePath(curSupplyPath);
 			if(sParser.parser()){
@@ -248,13 +240,9 @@ public class CalcUncertaintyOnce {
 		}
 		ArrayList<double[]> bufferSet = new ArrayList<double[]>();
 		for(int i=0; i<outputfile.length; i++){
-			if(doneFlag[i]==false){
 				double[] buf = new double[(int) (sSize[0]*sSize[1])];
 				bufferSet.add(buf);	
-			}
-			
 		}
-		int index = 0;
 		if(dParser.parser() && !sParserArr.isEmpty()){
 			int tgtHeight = (int)sSize[0];
 			int tgtWidth = (int)sSize[1];
@@ -273,22 +261,34 @@ public class CalcUncertaintyOnce {
 					int sum = 0;
 					boolean nullFlag = false;
 					for(int k=0; k<sParserArr.size(); k++){
-						double curSupplyVal = sParserArr.get(k).getData()[index];
-						if(!Double.isNaN(curSupplyVal) && curSupplyVal<0){
-							curSupplyVal = 0;
-						}
 						double scarVal = 0;
-						if(!Double.isNaN(popVal)){
-							if(popVal>=1){
-								scarVal =  curSupplyVal*1000/popVal;
+						double curSupplyVal = sParserArr.get(k).getData()[tgtIndex];
+						if(!Double.isNaN(popVal) && !Double.isNaN(curSupplyVal)){
+							if(popVal>=1 && curSupplyVal>=0){
+								scarVal = curSupplyVal*1000/popVal;
 							}
-							else if(popVal<1){
+							else if(popVal<1 && curSupplyVal>=0){
 								scarVal = 1701;
-							}								
+							}		
 						}
 						else{
 							scarVal = -1;
 						}
+						
+//						if(!Double.isNaN(curSupplyVal) && curSupplyVal<0){
+//							curSupplyVal = 0;
+//						}
+//						if(!Double.isNaN(popVal)){
+//							if(popVal>=1){
+//								scarVal =  curSupplyVal*1000/popVal;
+//							}
+//							else if(popVal<1){
+//								scarVal = 1701;
+//							}								
+//						}
+//						else{
+//							scarVal = -1;
+//						}
 //						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
 						int flag;
 						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;}
@@ -304,9 +304,6 @@ public class CalcUncertaintyOnce {
 						int typeIndex = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
 						if(doneFlag[typeIndex] == false){
 							bufferSet.get(typeIndex)[tgtIndex] = calcVotings(nullFlag, sum, supplyValArr);
-							if(bufferSet.get(typeIndex)[tgtIndex]!=0 && bufferSet.get(typeIndex)[tgtIndex]!=1701){
-								System.out.println("agree value at " + tgtIndex + " is: " + bufferSet.get(typeIndex)[tgtIndex]);
-							}
 						}
 					}
 					if(uncertaintyType.contains("deviation") || uncertaintyType.contains("variance")){
@@ -373,17 +370,33 @@ public class CalcUncertaintyOnce {
 					}
 				}
 			}
+//			for(int i=0; i<tgtWidth*tgtHeight; i++){
+//				for(int j=0; j<outputfile.length; j++){
+//					if(bufferSet.get(j)[i]!=0 && bufferSet.get(j)[i]!=1 && bufferSet.get(j)[i]%10!=0){
+//						System.out.println("the " + i + "th buffer value is " + bufferSet.get(j)[i]);
+//					}
+//				}
+//			}
 			
-			for(int i=0; i<outputfile.length; i++){
-				if(doneFlag[i]!=true){
+//			for(int i=0; i<outputfile.length; i++){
+//				if(doneFlag[i]==false){
 					Driver driver = gdal.GetDriverByName("GTiff");
-					Dataset dst_ds = driver.Create(outputfile[i], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
+					Dataset dst_ds = driver.Create(outputfile[0], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
 					dst_ds.SetGeoTransform(sParserArr.get(0).getGeoInfo());
 					dst_ds.SetProjection(sParserArr.get(0).getProjRef());
-					dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, bufferSet.get(i));						
-				}
-			}
-
+					double[] curBuffer = bufferSet.get(0);
+					int result = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, curBuffer);
+					System.out.println("Writing geotiff result is: " + result);		
+					
+//					Driver driver1 = gdal.GetDriverByName("GTiff");
+//					Dataset dst_ds1 = driver1.Create(outputfile[1], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
+//					dst_ds1.SetGeoTransform(sParserArr.get(0).getGeoInfo());
+//					dst_ds1.SetProjection(sParserArr.get(0).getProjRef());
+//					double[] curBuffer1 = bufferSet.get(1);
+//					int result1 = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, curBuffer1);
+//					System.out.println("Writing geotiff result is: " + result1);	
+//				}
+//			}
 			return true;
 		}
 		else{
@@ -391,7 +404,7 @@ public class CalcUncertaintyOnce {
 			return false;	
 		}
 	}
-	
+
 	public static boolean isAllTrue(boolean[] array)
 	{
 	    for(boolean b : array) if(!b) return false;
@@ -416,6 +429,7 @@ public class CalcUncertaintyOnce {
 			return -1;
 	}
 	
+	
 	public double calcEntropy(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){
 		if(!isNullExisted){
 			double[] occurences = new double[4];
@@ -436,6 +450,7 @@ public class CalcUncertaintyOnce {
 			return -1;
 		}		
 	}
+	
 	
 	public double calcVotings(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){
 		if(isNullExisted)	return -1;
@@ -458,6 +473,7 @@ public class CalcUncertaintyOnce {
 		}		
 	}
 	
+	
 	public double calcVotingRates(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){
 		if(isNullExisted)	return -1;
 		else{
@@ -477,6 +493,7 @@ public class CalcUncertaintyOnce {
 			return rate;
 		}		
 	}
+	
 	
 	public ArrayList<File> getAllFiles(String directoryName, ArrayList<File> files) {
 	    File directory = new File(directoryName);
