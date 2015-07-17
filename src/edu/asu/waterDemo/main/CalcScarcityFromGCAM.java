@@ -111,7 +111,7 @@ public class CalcScarcityFromGCAM {
  					double valNC = netcdfDemand[curIndNC];
  					if(!Double.isNaN(valNC) && !Double.isNaN(val)){
  						if(valNC!=0){
- 							targetSct[index] = val/(valNC/100);
+ 							targetSct[index] = val*1000/(valNC/100);
  						}
  						else{
  							targetSct[index] = 1701;
@@ -128,6 +128,7 @@ public class CalcScarcityFromGCAM {
 			dst_ds.SetGeoTransform(parser.getGeoInfo());
 			dst_ds.SetProjection(parser.getProjRef());
 			int writeResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tiffSize[1], (int)tiffSize[0], targetSct);
+			dst_ds.delete();
 			System.out.println("Result for writing geotiff files: " + writeResult);	
  		}
  		

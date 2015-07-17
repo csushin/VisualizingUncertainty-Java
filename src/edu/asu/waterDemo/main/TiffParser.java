@@ -94,8 +94,8 @@ public class TiffParser {
 		
 			Driver hDriver = hDataset.GetDriver();
 			Band hBand = hDataset.GetRasterBand(1);
-			this.xSize = hDataset.getRasterXSize();
-			this.ySize = hDataset.getRasterYSize();
+			this.setxSize(hDataset.getRasterXSize());
+			this.setySize(hDataset.getRasterYSize());
 			double[] sizeArr = {ySize, xSize};
 			this.size = sizeArr;
 			

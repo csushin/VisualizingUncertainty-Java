@@ -315,6 +315,7 @@ public class CalcUncertaintyMap {
 			dst_ds.SetGeoTransform(sParserArr.get(0).getGeoInfo());
 			dst_ds.SetProjection(sParserArr.get(0).getProjRef());
 			dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, buf);
+			dst_ds.delete();
 			return true;
 		}
 		else{

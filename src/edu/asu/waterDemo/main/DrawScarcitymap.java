@@ -224,13 +224,11 @@ public class DrawScarcitymap {
 								}
 							}
 							Driver driver = gdal.GetDriverByName("GTiff");
-//							System.out.println(waterParser.getGeoInfo().toString());
-//							System.out.println(waterParser.getxSize());
-//							System.out.println(waterParser.getySize());
 							Dataset dst_ds = driver.Create(outputfile, waterParser.getxSize(), waterParser.getySize(), 1, gdalconst.GDT_Float64);
 							dst_ds.SetGeoTransform(waterParser.getGeoInfo());
 							dst_ds.SetProjection(waterParser.getProjRef());
 							int writeResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, waterParser.getxSize(), waterParser.getySize(), buf);
+							dst_ds.delete();
 							System.out.println("Result for writing geotiff files: " + writeResult);							
 				
 						}

@@ -56,7 +56,7 @@ public class CalcUncertaintyOnce {
 		}
 		else{
 			demandDir = "/work/asu/data/wdemand/popden_pred/";
-			supplyDir = "/work/asu/data/wsupply/"; 
+			supplyDir = "/work/asu/data/wsupply/BW_1km/"; 
 			agreeDir = "/work/asu/data/wuncertainty/agree/"; 
 			disagreeDir = "/work/asu/data/wuncertainty/disagree/";
 			varianceDir = "/work/asu/data/wuncertainty/variance/";
@@ -150,7 +150,7 @@ public class CalcUncertaintyOnce {
 				else{
 					deletedFlag[i] = false;
 					System.out.println("Cannot delete coverage or layer or data of " + i + "\n");
-					return doneFlag[i];
+					return false;
 				}
 			}
 		}
@@ -191,7 +191,8 @@ public class CalcUncertaintyOnce {
 						if(supplyFiles.contains("MPI-ESM-LR_CCLM") || supplyFiles.contains("HadGEM2-ES_CCLM") || supplyFiles.contains("EC-EARTH-r12_CCLM")
 								|| supplyFiles.contains("CNRM-CM5_CCLM") || supplyFiles.contains("EC-EARTH-r3_HIRHAM")){
 							String supplyPath = supplyListOfFiles.get(j).getAbsolutePath();
-							supplyPathList.add(supplyPath);							
+							supplyPathList.add(supplyPath);	
+							System.out.println("one of the supply path is:" + supplyPath);
 						}
 					}
 					else{
@@ -219,11 +220,12 @@ public class CalcUncertaintyOnce {
 			System.out.println("supply path is empty, so it cannot compute and save!");
 			return false;
 		}
+		System.out.println("demand path is:" + dPath);
 		TiffParser dParser = new TiffParser();
 		dParser.setFilePath(dPath);
 		ArrayList<TiffParser> sParserArr = new ArrayList<TiffParser>();
 		double[] sSize = {};
-		double[] dSize = dParser.getSize();
+//		double[] dSize = dParser.getSize();
 		for(int i=0; i<sPathList.size(); i++){
 			String curSupplyPath = sPathList.get(i);
 			boolean isExisted = new File(curSupplyPath).exists();
@@ -246,23 +248,30 @@ public class CalcUncertaintyOnce {
 		if(dParser.parser() && !sParserArr.isEmpty()){
 			int tgtHeight = (int)sSize[0];
 			int tgtWidth = (int)sSize[1];
+			
 			int deltaX = 0;
 			int deltaY = 0;
 			if(dParser.getxSize() != sParserArr.get(0).getxSize() || dParser.getySize() != sParserArr.get(0).getySize()){
-				deltaX = dParser.getxSize() - sParserArr.get(0).getxSize();
-				deltaY = dParser.getySize() - sParserArr.get(0).getySize();
+				deltaX = (int) (dParser.getxSize() - tgtWidth);
+				deltaY = (int) (dParser.getySize() - tgtHeight);
 			}
+			System.out.println("dSize[0] is " + dParser.getxSize() + " dSize[1] is "+ dParser.getySize());
 			for(int h=0; h<tgtHeight; h++){
 				for(int w=0; w<tgtWidth; w++){
 					int tgtIndex = h*tgtWidth+w;
 					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
+//					if(tgtIndex > tgtHeight*tgtWidth || popIndex > tgtHeight*tgtWidth){
+//						System.out.println("index out bound");
+//					}
 					double popVal = dParser.getData()[popIndex];
+//					System.out.println("real pop value is: " + popVal);
 					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
 					int sum = 0;
 					boolean nullFlag = false;
 					for(int k=0; k<sParserArr.size(); k++){
 						double scarVal = 0;
 						double curSupplyVal = sParserArr.get(k).getData()[tgtIndex];
+//						System.out.println("real supply value is: " + curSupplyVal);
 						if(!Double.isNaN(popVal) && !Double.isNaN(curSupplyVal)){
 							if(popVal>=1 && curSupplyVal>=0){
 								scarVal = curSupplyVal*1000/popVal;
@@ -275,20 +284,6 @@ public class CalcUncertaintyOnce {
 							scarVal = -1;
 						}
 						
-//						if(!Double.isNaN(curSupplyVal) && curSupplyVal<0){
-//							curSupplyVal = 0;
-//						}
-//						if(!Double.isNaN(popVal)){
-//							if(popVal>=1){
-//								scarVal =  curSupplyVal*1000/popVal;
-//							}
-//							else if(popVal<1){
-//								scarVal = 1701;
-//							}								
-//						}
-//						else{
-//							scarVal = -1;
-//						}
 //						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
 						int flag;
 						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;}
@@ -370,33 +365,19 @@ public class CalcUncertaintyOnce {
 					}
 				}
 			}
-//			for(int i=0; i<tgtWidth*tgtHeight; i++){
-//				for(int j=0; j<outputfile.length; j++){
-//					if(bufferSet.get(j)[i]!=0 && bufferSet.get(j)[i]!=1 && bufferSet.get(j)[i]%10!=0){
-//						System.out.println("the " + i + "th buffer value is " + bufferSet.get(j)[i]);
-//					}
-//				}
-//			}
-			
-//			for(int i=0; i<outputfile.length; i++){
-//				if(doneFlag[i]==false){
+			for(int i=0; i<outputfile.length; i++){
+				if(doneFlag[i]==false){
 					Driver driver = gdal.GetDriverByName("GTiff");
-					Dataset dst_ds = driver.Create(outputfile[0], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
-					dst_ds.SetGeoTransform(sParserArr.get(0).getGeoInfo());
-					dst_ds.SetProjection(sParserArr.get(0).getProjRef());
-					double[] curBuffer = bufferSet.get(0);
+					Dataset dst_ds = driver.Create(outputfile[i], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
+					dst_ds.SetGeoTransform(sParserArr.get(i).getGeoInfo());
+					dst_ds.SetProjection(sParserArr.get(i).getProjRef());
+					double[] curBuffer = bufferSet.get(i);
 					int result = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, curBuffer);
-					System.out.println("Writing geotiff result is: " + result);		
-					
-//					Driver driver1 = gdal.GetDriverByName("GTiff");
-//					Dataset dst_ds1 = driver1.Create(outputfile[1], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
-//					dst_ds1.SetGeoTransform(sParserArr.get(0).getGeoInfo());
-//					dst_ds1.SetProjection(sParserArr.get(0).getProjRef());
-//					double[] curBuffer1 = bufferSet.get(1);
-//					int result1 = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, curBuffer1);
-//					System.out.println("Writing geotiff result is: " + result1);	
-//				}
-//			}
+					dst_ds.FlushCache();
+					dst_ds.delete();
+					System.out.println("Writing geotiff result is: " + result);							
+				}
+			}
 			return true;
 		}
 		else{
