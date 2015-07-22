@@ -23,6 +23,9 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
+import edu.asu.waterDemo.commonclasses.GeoserverService;
+import edu.asu.waterDemo.commonclasses.TiffParser;
+
 
 @Path("/calcUncertainty")
 public class CalcUncertaintyMap {

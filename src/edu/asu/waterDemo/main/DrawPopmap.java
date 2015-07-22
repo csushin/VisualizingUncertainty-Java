@@ -26,7 +26,7 @@ import com.mongodb.DBCursor;
 
 import edu.asu.waterDemo.bean.DrawPopmapBean;
 import edu.asu.waterDemo.bean.ListPointsBean;
-import edu.asu.waterDemo.main.TiffParser;
+import edu.asu.waterDemo.commonclasses.TiffParser;
 
 @Path("/getPopPoints")
 public class DrawPopmap {

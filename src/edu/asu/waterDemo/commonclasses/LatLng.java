@@ -1,4 +1,4 @@
-package edu.asu.waterDemo.main;
+package edu.asu.waterDemo.commonclasses;
 
 public class LatLng {
 

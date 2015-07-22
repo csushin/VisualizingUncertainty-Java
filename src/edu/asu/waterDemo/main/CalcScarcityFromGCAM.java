@@ -17,6 +17,7 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
+import edu.asu.waterDemo.commonclasses.TiffParser;
 import ucar.ma2.Array;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.NetcdfFile;
@@ -41,8 +42,8 @@ public class CalcScarcityFromGCAM {
 		}
 		else{
 			this.netcdfPath = "/work/asu/data/netcdf/";
-			this.supplyPath = "/work/asu/data/wsupply";
-			this.scarcityPath = "/work/asu/data/wscarcity";
+			this.supplyPath = "/work/asu/data/wsupply/BW_1km/";
+			this.scarcityPath = "/work/asu/data/wscarcity/";
 		}
 		
 	}
@@ -55,7 +56,7 @@ public class CalcScarcityFromGCAM {
 			@QueryParam("demandName") @DefaultValue("null") String demandName,
 			@QueryParam("supplyName") @DefaultValue("none") String supplyName){
 		this.netcdfPath = this.netcdfPath + demandName + ".nc";
-		this.supplyPath = this.supplyPath + supplyName + ".tif";
+		this.supplyPath = this.supplyPath + supplyName.split("_")[0] + File.separatorChar + supplyName + ".tif";
 		this.scarcityPath = this.scarcityPath + demandName + "_" + supplyName + ".tif";
 		int yearMin = 2010;
 		int yearStep = 5;

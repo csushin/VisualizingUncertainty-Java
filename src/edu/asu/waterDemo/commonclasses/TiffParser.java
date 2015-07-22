@@ -1,4 +1,4 @@
-package edu.asu.waterDemo.main;
+package edu.asu.waterDemo.commonclasses;
 
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
@@ -37,14 +37,7 @@ public class TiffParser {
 		this.geoInfo = geoInfo;
 	}
 
-	TiffParser(){}
-	
-	TiffParser(int xoff, int yoff, int xSize, int ySize){
-		this.xoff = xoff;
-		this.yoff = yoff;
-		this.xSize = xSize;
-		this.ySize = ySize;
-	}
+	public TiffParser(){}
 	
 	public int getXoff() {
 		return xoff;
@@ -114,11 +107,11 @@ public class TiffParser {
 			// get geo information of tiff
 			double[] geoInfo = hDataset.GetGeoTransform();
 			String projRef = hDataset.GetProjectionRef();
-			System.out.println(geoInfo[0]);// upper-left longitude
-			System.out.println(geoInfo[1]);//pixel width, lng
-			System.out.println(geoInfo[2]);
-			System.out.println(geoInfo[3]);// upper-left latitude
-			System.out.println(geoInfo[4]);
+//			System.out.println(geoInfo[0]);// upper-left longitude
+//			System.out.println(geoInfo[1]);//pixel width, lng
+//			System.out.println(geoInfo[2]);
+//			System.out.println(geoInfo[3]);// upper-left latitude
+//			System.out.println(geoInfo[4]);
 //			System.out.println(geoInfo[5]);// pixel height, lat
 
 			// get statistical information about tiff
@@ -144,12 +137,12 @@ public class TiffParser {
 			this.lrLatlng = new double[2];
 			this.lrLatlng[0] = this.ulLatlng[0] + geoInfo[5]*ySize;//lat
 			this.lrLatlng[1] = this.ulLatlng[1] + geoInfo[1]*xSize;//lon
-//			System.out.println(this.xoff);
-//			System.out.println(this.yoff);
-//			System.out.println(this.ulLatlng[0]);
-//			System.out.println(this.ulLatlng[1]);
-//			System.out.println(this.lrLatlng[0]);
-//			System.out.println(this.lrLatlng[1]);
+			System.out.println(this.xoff);
+			System.out.println(this.yoff);
+			System.out.println(this.ulLatlng[0]);
+			System.out.println(this.ulLatlng[1]);
+			System.out.println(this.lrLatlng[0]);
+			System.out.println(this.lrLatlng[1]);
 			this.pixelHW = new double[2];
 			this.pixelHW[0] = ySize;
 			this.pixelHW[1] = xSize;

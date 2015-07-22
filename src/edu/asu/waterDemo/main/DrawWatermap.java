@@ -25,6 +25,8 @@ import com.mongodb.MongoClient;
 
 import edu.asu.waterDemo.bean.ListPointsBean;
 import edu.asu.waterDemo.bean.DrawWatermapBean;
+import edu.asu.waterDemo.commonclasses.TiffParser;
+import edu.asu.waterDemo.commonclasses.newConnection;
 
 @Path("/getWaterPoints")
 public class DrawWatermap {
@@ -145,7 +147,7 @@ public class DrawWatermap {
 					double[] partSize = {hUnit, wUnit};
 					supplyPath = supplyDir + "supply/" + supplyfName;
 					collectionName = parseName(supplyfName);
-					TiffParser tiffParser = new TiffParser(Integer.parseInt(partIdx), Integer.parseInt(partIdy), wUnit, hUnit);
+					TiffParser tiffParser = new TiffParser();
 					tiffParser.setFilePath(supplyPath);
 					if(tiffParser.parser()){
 						double[] lrLatlng = tiffParser.getLrLatlng();//lower-right

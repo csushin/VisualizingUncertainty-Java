@@ -17,6 +17,7 @@ import javax.ws.rs.core.Context;
 import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.bean.GetAllTiffParamsBean;
+import edu.asu.waterDemo.commonclasses.LoadAllPossibleParams;
 
 
 @Path("/LoadTiffParams")

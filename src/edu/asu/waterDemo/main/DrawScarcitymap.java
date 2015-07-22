@@ -18,6 +18,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
+
+
 /*import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -44,8 +46,12 @@ import org.glassfish.jersey.server.JSONP;
 //import com.mongodb.DBCollection;
 //import com.mongodb.DBCursor;
 
+
+
 import edu.asu.waterDemo.bean.DrawScarcitymapBean;
 import edu.asu.waterDemo.bean.ListPointsBean;
+import edu.asu.waterDemo.commonclasses.GeoserverService;
+import edu.asu.waterDemo.commonclasses.TiffParser;
 
 @Path("/getScarcityPoints")
 public class DrawScarcitymap {
