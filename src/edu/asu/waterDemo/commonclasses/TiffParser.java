@@ -137,12 +137,12 @@ public class TiffParser {
 			this.lrLatlng = new double[2];
 			this.lrLatlng[0] = this.ulLatlng[0] + geoInfo[5]*ySize;//lat
 			this.lrLatlng[1] = this.ulLatlng[1] + geoInfo[1]*xSize;//lon
-			System.out.println(this.xoff);
-			System.out.println(this.yoff);
-			System.out.println(this.ulLatlng[0]);
-			System.out.println(this.ulLatlng[1]);
-			System.out.println(this.lrLatlng[0]);
-			System.out.println(this.lrLatlng[1]);
+//			System.out.println(this.xoff);
+//			System.out.println(this.yoff);
+//			System.out.println(this.ulLatlng[0]);
+//			System.out.println(this.ulLatlng[1]);
+//			System.out.println(this.lrLatlng[0]);
+//			System.out.println(this.lrLatlng[1]);
 			this.pixelHW = new double[2];
 			this.pixelHW[0] = ySize;
 			this.pixelHW[1] = xSize;

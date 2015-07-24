@@ -3,10 +3,20 @@ package edu.asu.waterDemo.commonclasses;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+
+
+
+
+import org.apache.commons.codec.binary.Base64;
+
+import sun.misc.BASE64Encoder;
 
 public class GenerateTiles {
 	private String outputPath;
@@ -51,16 +61,46 @@ public class GenerateTiles {
 		this.setfObject(f);
 	}
 	
-	public boolean writeBufferImage(){
+	public String writeBufferImage(){
 		try{
+//			regarding the speed, we may not need to write them into the local disk
 			ImageIO.write(this.getImg(), "PNG", this.getfObject());
 			System.out.println(this.getType() + " png tiles are finished!");
-			return true;
+			String imgBase64 = this.encodeFromBufferImgToBase64(this.getImg(), "PNG");
+			return imgBase64;
 		}catch(Exception e){
 			e.printStackTrace();
 			System.out.println("Failure in writing tiles for " + this.outputPath);
-			return false;
+			return null;
 		}
+	}
+	
+	public String encodeFromReaderToBase64(String path, String type){
+		BufferedImage img = null;
+		try {
+			img = ImageIO.read(new File(path));
+			return this.encodeFromBufferImgToBase64(img, "PNG");
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("Error in reading the image from the given path: " + path);
+			return null;
+		}
+		
+	}
+	
+	public String encodeFromBufferImgToBase64(BufferedImage image, String type){
+        String imageString = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, type, bos);
+            byte[] imageBytes = bos.toByteArray();
+            BASE64Encoder encoder = new BASE64Encoder();
+            imageString = encoder.encode(imageBytes);
+            bos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return imageString;		
 	}
 	
 	public void drawTiles(double mean, double stat, int originIndex, double lat, double lng) throws IOException{
@@ -129,10 +169,6 @@ public class GenerateTiles {
 	
 	private Point latLngToLayerPoint(LatLng latlng){
 		Point2D projectedPoint = new Point2D.Double();
-//		projectedPoint.x = Math.round(projectedPoint.x);
-//		projectedPoint.y = Math.round(projectedPoint.y);
-//		double x = projectedPoint.x - this.initialTopLeftPoint.x;
-//		double y = projectedPoint.y - this.initialTopLeftPoint.y;
 		double x = latlng.getLng();
 		double y = latlng.getLat();
 		projectedPoint.setLocation(x, y);
@@ -140,12 +176,6 @@ public class GenerateTiles {
 //		The former supports double variable and another only supports integer in default
 		Point trsPt = this.transformation(projectedPoint);
 		return trsPt;
-//		float earthRadius = 6378137;
-//		x = projectedPoint.x * earthRadius;
-//		y = projectedPoint.y * earthRadius;
-//		Point result = new Point();
-//		result.setLocation(x, y);
-//		return result;
 	}
 	
 	private Point transformation(Point2D prjPt){
@@ -157,17 +187,6 @@ public class GenerateTiles {
 		result.setLocation(x, y);
 		return result;
 	}
-	
-//	private Point project(LatLng latlng){
-//		double degreeToRad = Math.PI / 180.0;
-//		double lat = Math.max(Math.min(this.MAX_LATITUDE, latlng.getLat()), -this.MAX_LATITUDE);
-//		double x = latlng.getLng() * degreeToRad;
-//		double _y = lat * degreeToRad;
-//		double y = Math.log(Math.tan((Math.PI/4.0)+(_y/2.0)));
-//		Point result = new Point();
-//		result.setLocation(x,y);
-//		return result;
-//	}
 	
 	
 	public String getType() {
