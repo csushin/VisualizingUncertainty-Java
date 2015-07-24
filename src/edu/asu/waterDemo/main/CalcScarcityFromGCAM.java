@@ -2,6 +2,7 @@ package edu.asu.waterDemo.main;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -11,12 +12,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
+import org.apache.http.client.ClientProtocolException;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
+import edu.asu.waterDemo.commonclasses.GeoserverService;
 import edu.asu.waterDemo.commonclasses.TiffParser;
 import ucar.ma2.Array;
 import ucar.ma2.InvalidRangeException;
@@ -27,9 +30,9 @@ import ucar.nc2.dataset.NetcdfDataset;
 
 @Path("/calcGCAMScarcity")
 public class CalcScarcityFromGCAM {
-	String netcdfPath;
-	String supplyPath;
-	String scarcityPath;
+	public String netcdfPath;
+	public String supplyPath;
+	public String scarcityPath;
 	
 	@Context
 	public void setServletContext(ServletContext context){
@@ -37,7 +40,7 @@ public class CalcScarcityFromGCAM {
 		String osNameMatch = osName.toLowerCase();
 		if(osNameMatch.contains("windows")){
 			this.netcdfPath = context.getRealPath("img/netcdf") + File.separatorChar;
-			this.supplyPath = context.getRealPath("img/supply") + File.separatorChar;
+			this.supplyPath = context.getRealPath("img/supply/BW_1km") + File.separatorChar;
 			this.scarcityPath = context.getRealPath("img/scarcity") + File.separatorChar;
 		}
 		else{
@@ -54,10 +57,14 @@ public class CalcScarcityFromGCAM {
 	public boolean query(@QueryParam("year") @DefaultValue("2010") int year,
 			@QueryParam("demandType") @DefaultValue("livestock") String dataType,
 			@QueryParam("demandName") @DefaultValue("null") String demandName,
-			@QueryParam("supplyName") @DefaultValue("none") String supplyName){
+			@QueryParam("supplyName") @DefaultValue("none") String supplyName) throws ClientProtocolException, IOException{
 		this.netcdfPath = this.netcdfPath + demandName + ".nc";
 		this.supplyPath = this.supplyPath + supplyName.split("_")[0] + File.separatorChar + supplyName + ".tif";
-		this.scarcityPath = this.scarcityPath + demandName + "_" + supplyName + ".tif";
+		String outputName = demandName + "_" + dataType + "_" + year +"_" + supplyName;
+		String outputPath = this.scarcityPath + outputName + ".tif";
+		String port = "8080";
+		String ws = "niger_river";
+		String style = "nr_wscarcity_fm";
 		int yearMin = 2010;
 		int yearStep = 5;
 		int yearIndex = (year - yearMin) / yearStep;
@@ -78,18 +85,13 @@ public class CalcScarcityFromGCAM {
 			e.printStackTrace();
 		}
 		
+		if(isGeotiffExisted(outputName, this.scarcityPath)){
+//			here we skip the process to check if there is corresponded coverages in the geoserver, in order to save query time
+			return true;
+		}
+		
 		float[] netcdfDemand = new float[latSize*lngSize];
-		if(!dataType.equals("All")){
-			String[] allType = {"irrigation_demand", "livestock_demand", "electricity_demand", "mfg_demand","domestic_demand"};
-			for(String each : allType){
-				float[] curDemand = new float[latSize*lngSize];
-				curDemand = getVariableArary(ncfile, yearIndex, dataType);
-				netcdfDemand = addArray(netcdfDemand, curDemand);
-			}
-		}
-		else{
-			netcdfDemand = getVariableArary(ncfile, yearIndex, dataType);
-		}
+		netcdfDemand = getVariableArary(ncfile, yearIndex, dataType);
 		
 // 		read geotiff file
  		TiffParser parser = new TiffParser();
@@ -125,18 +127,37 @@ public class CalcScarcityFromGCAM {
  			}
  			
  			Driver driver = gdal.GetDriverByName("GTiff");
-			Dataset dst_ds = driver.Create(this.scarcityPath, (int)tiffSize[1], (int)tiffSize[0], 1, gdalconst.GDT_Float64);
+			Dataset dst_ds = driver.Create(outputPath, (int)tiffSize[1], (int)tiffSize[0], 1, gdalconst.GDT_Float64);
 			dst_ds.SetGeoTransform(parser.getGeoInfo());
 			dst_ds.SetProjection(parser.getProjRef());
 			int writeResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tiffSize[1], (int)tiffSize[0], targetSct);
 			dst_ds.delete();
 			System.out.println("Result for writing geotiff files: " + writeResult);	
+			
+			GeoserverService geoserver = new GeoserverService(outputName, outputPath, port, ws, style);
+			if(!geoserver.generateCoverage()){
+				return false;
+			}
+			return true;
  		}
  		
 		
 		return false;
 	}
 	
+	public boolean isGeotiffExisted(String targetFile, String targetDir){
+		ArrayList<File> scarcityFiles = new ArrayList<File>();
+		scarcityFiles = getAllFiles(targetDir, scarcityFiles);
+		for (int j = 0; j < scarcityFiles.size(); j++) {
+			if (scarcityFiles.get(j).isFile()) {
+				String eachFile = scarcityFiles.get(j).getName();
+				if (eachFile.endsWith(".tif") && eachFile.contains(targetFile)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	
 	public float[] getVariableArary(NetcdfFile ncfile, int yearIndex, String type){
 		Variable v=ncfile.findVariable(type);
@@ -144,6 +165,7 @@ public class CalcScarcityFromGCAM {
 		try {
 			data = v.read(yearIndex+",:,:");
 		} catch (IOException e) {
+			System.out.println("Exception thrown in reading netcdf File!");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidRangeException e) {
@@ -155,18 +177,33 @@ public class CalcScarcityFromGCAM {
  		return res;
 	}
 	
-	public float[] addArray(float[] src1, float[] src2){
-		if(src1.length == src2.length){
-			int i=0;
-			while(i<src1.length){
-				src1[i] = src1[i] + src2[i];
-				i++;
-			}
-			return src1;
-		}
-		else{
-			System.out.println("two arrays are not equal length, they cann't be added!");
-			return null;
-		}
+//	public float[] addArray(float[] src1, float[] src2){
+//		if(src1.length == src2.length){
+//			int i=0;
+//			while(i<src1.length){
+//				src1[i] = src1[i] + src2[i];
+//				i++;
+//			}
+//			return src1;
+//		}
+//		else{
+//			System.out.println("two arrays are not equal length, they cann't be added!");
+//			return null;
+//		}
+//	}
+	
+	public ArrayList<File> getAllFiles(String directoryName, ArrayList<File> files) {
+	    File directory = new File(directoryName);
+
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    for (File file : fList) {
+	        if (file.isFile()) {
+	            files.add(file);
+	        } else if (file.isDirectory()) {
+	        	getAllFiles(file.getAbsolutePath(), files);
+	        }
+	    }
+	    return files;
 	}
 }
