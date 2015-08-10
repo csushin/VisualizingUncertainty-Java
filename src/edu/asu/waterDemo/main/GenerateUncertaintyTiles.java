@@ -1,15 +1,11 @@
 package edu.asu.waterDemo.main;
 
-//import java.io.BufferedReader;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
-//import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -19,14 +15,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
-import org.gdal.gdal.Dataset;
-import org.gdal.gdal.Driver;
-import org.gdal.gdal.gdal;
-import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
-import edu.asu.waterDemo.commonclasses.GeoserverService;
 import edu.asu.waterDemo.commonclasses.LatLng;
 import edu.asu.waterDemo.commonclasses.TiffParser;
 
@@ -36,10 +27,6 @@ public class GenerateUncertaintyTiles {
 	
 	public class imgBase64{
 		public String[] imgStr = new String[3];
-		public double latMin;
-		public double latMax;
-		public double lngMin;
-		public double lngMax;
 	}
 	
 	public String supplyDir;
@@ -89,41 +76,32 @@ public class GenerateUncertaintyTiles {
 			@QueryParam("emissionType") @DefaultValue("null") String emission,
 			@QueryParam("scenarioType") @DefaultValue("null") String scenario,
 			@QueryParam("uncertaintyType") @DefaultValue("agree") String uncertaintyType,
-			@QueryParam("oldData") @DefaultValue("true") String oldData,
+			@QueryParam("oldData") @DefaultValue("old") String oldData,
 			@QueryParam("mapPixelOrigin") @DefaultValue("0,0") String mapPixelOrigin,
 			@QueryParam("zoomLevel") @DefaultValue("4") int zoomLevel) throws IOException {
 		imgBase64 result = new imgBase64();
 		
-//		parameters for geoserver request
-		String port = "8080";
-		String ws = "niger_river";
-//		String style = "";
-		boolean createFlag = false;
-//		String fileName = "";
-//		String outputfile = "";
 //		initialize the output dir, path ,and filenames
 		int jobNum = uncertaintyType.split(",").length;
-		String[] style = new String[jobNum];
 		String[] fileName = new String[jobNum];
 		String[] outputfile = new String[jobNum];
 		String[] outputDir = new String[jobNum];
-		String[] imgBase64 = new String[jobNum];
 		if(uncertaintyType.contains("agree")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_MeanVotings.png";
-			outputfile[index] = meanVotingsDir + fileName[index];
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_" + oldData +"_MeanVotings.png";
+			outputfile[index] = this.meanVotingsDir + fileName[index];
 			outputDir[index] = this.meanVotingsDir;
 		}
 		if(uncertaintyType.contains("variance")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_MeanVariance.png";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_" + oldData +"_MeanVariance.png";
 			outputfile[index] = this.meanVarianceDir + fileName[index];
 			outputDir[index] = this.meanVarianceDir;	
 		}
 		if(uncertaintyType.contains("entropy")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_MeanEntropy.png";
-			outputfile[index] = meanEntropyDir + fileName[index];
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_" + oldData +"_MeanEntropy.png";
+			outputfile[index] = this.meanEntropyDir + fileName[index];
 			outputDir[index] = this.meanEntropyDir;
 		}
 		
@@ -155,11 +133,14 @@ public class GenerateUncertaintyTiles {
 				doneFlag[i] = false;
 			}
 		}
-
+		
+		if(isAllTrue(doneFlag)){
+			return result;
+		}
 		
 //		generate new tiles
 		ArrayList<String> supplyPathList = getAllSupplies(demandPath, this.supplyDir, emission, scenario, uncertaintyType, oldData);
-		if(computeAndsave(demandPath, supplyPathList, outputfile, emission, scenario, uncertaintyType, doneFlag, tiles, result)){
+		if(computeAndsave(demandPath, supplyPathList, outputfile, uncertaintyType, doneFlag, tiles, result, oldData)){
 			return result;		
 		}
 		else{
@@ -190,7 +171,7 @@ public class GenerateUncertaintyTiles {
 			if (supplyListOfFiles.get(j).isFile()) {
 				String supplyFiles = supplyListOfFiles.get(j).getName();
 				if (supplyFiles.endsWith(".tif")  && supplyFiles.contains(scenario) && supplyFiles.contains(emission)) {
-					if(oldData.equals("true")){
+					if(oldData.equalsIgnoreCase("old")){
 						if(supplyFiles.contains("MPI-ESM-LR_CCLM") || supplyFiles.contains("HadGEM2-ES_CCLM") || supplyFiles.contains("EC-EARTH-r12_CCLM")
 								|| supplyFiles.contains("CNRM-CM5_CCLM") || supplyFiles.contains("EC-EARTH-r3_HIRHAM")){
 							String supplyPath = supplyListOfFiles.get(j).getAbsolutePath();
@@ -212,8 +193,8 @@ public class GenerateUncertaintyTiles {
 		return supplyPathList;
 	}
 	
-	public boolean computeAndsave(String dPath, ArrayList<String> sPathList, String outputfile[], String emission, String scenario, 
-			String uncertaintyType, boolean[] doneFlag, ArrayList<GenerateTiles> tiles, imgBase64 result) throws IOException{
+	public boolean computeAndsave(String dPath, ArrayList<String> sPathList, String outputfile[], String uncertaintyType, boolean[] doneFlag, 
+			ArrayList<GenerateTiles> tiles, imgBase64 result, String oldData) throws IOException{
 		if(sPathList.isEmpty())	{
 			System.out.println("supply path is empty, so it cannot compute and save!");
 			return false;
@@ -226,25 +207,18 @@ public class GenerateUncertaintyTiles {
 //		double[] dSize = dParser.getSize();
 		for(int i=0; i<sPathList.size(); i++){
 			String curSupplyPath = sPathList.get(i);
-			boolean isExisted = new File(curSupplyPath).exists();
 			TiffParser sParser = new TiffParser();
 			sParser.setFilePath(curSupplyPath);
 			if(sParser.parser()){
 				sParserArr.add(sParser);
 				sSize = sParser.getSize();
-				result.latMin = sParser.getLrLatlng()[0];
-				result.latMax = sParser.getUlLatlng()[0];
-				result.lngMin = sParser.getUlLatlng()[1];
-				result.lngMax = sParser.getLrLatlng()[1];
 			}
 			else {
 				System.out.println("Error in parsing supply files!");
 				return false;
 			}
 		}
-		if(isAllTrue(doneFlag)){
-			return true;
-		}
+
 		ArrayList<double[]> bufferSet = new ArrayList<double[]>();
 		for(int i=0; i<outputfile.length; i++){
 			double[] buf = new double[(int) (sSize[0]*sSize[1])];
@@ -257,7 +231,6 @@ public class GenerateUncertaintyTiles {
 		if(dParser.parser() && !sParserArr.isEmpty()){
 			int tgtHeight = (int)sSize[0];
 			int tgtWidth = (int)sSize[1];
-			
 			int deltaX = 0;
 			int deltaY = 0;
 			if(dParser.getxSize() != sParserArr.get(0).getxSize() || dParser.getySize() != sParserArr.get(0).getySize()){
@@ -268,6 +241,12 @@ public class GenerateUncertaintyTiles {
 			int typeIndexAgree = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
 			int typeIndexVar = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
 			int typeIndexEnt = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
+			double latstepNC = 0.5;
+			double lngstepNC = 0.5;
+			double ratio = 1/1000.0;
+			if(oldData.equalsIgnoreCase("new")){
+				ratio = Math.pow(10,9);
+			}
 			for(int h=0; h<tgtHeight; h++){
 				for(int w=0; w<tgtWidth; w++){
 					int tgtIndex = h*tgtWidth+w;
@@ -278,13 +257,13 @@ public class GenerateUncertaintyTiles {
 					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
 					int sum = 0;
 					boolean nullFlag = false;
-					int nonZeroCount  = 0;
+					int nonNANCount  = 0;
 					for(int k=0; k<sParserArr.size(); k++){
 						double scarVal = 0;
 						double curSupplyVal = sParserArr.get(k).getData()[tgtIndex];
 						if(!Double.isNaN(popVal) && !Double.isNaN(curSupplyVal)){
 							if(popVal>=1 && curSupplyVal>=0){
-								scarVal = curSupplyVal*1000/popVal;
+								scarVal = curSupplyVal/(popVal*ratio);
 							}
 							else if(popVal<1 && curSupplyVal>=0){
 								scarVal = 1701;
@@ -296,33 +275,32 @@ public class GenerateUncertaintyTiles {
 						
 //						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
 						int flag;
-						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonZeroCount++;}
-						else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonZeroCount++;}
-						else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonZeroCount++;}
-						else if(scarVal>1700)	{flag = 4;sum+=flag;nonZeroCount++;}
+						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonNANCount++;}
+						else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonNANCount++;}
+						else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonNANCount++;}
+						else if(scarVal>1700)	{flag = 4;sum+=flag;nonNANCount++;}
 						else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
 						supplyValArr.add(flag);
 					}
 					
-					double mean = calcMean(nullFlag, sum, nonZeroCount);//(double) (sum/(double)supplyValArr.size());
+					double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
 					if(uncertaintyType.contains("agree")){
 						if(doneFlag[typeIndexAgree] == false){
-							double votings = calcVotings(nullFlag, sum, supplyValArr);
+							double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
 							bufferSet.get(typeIndexAgree)[tgtIndex] = votings;
 							tiles.get(typeIndexAgree).drawTiles(mean, votings, tgtIndex, lat, lng);
 						}
-						
 					}
-					else if(uncertaintyType.contains("variance")){
+					if(uncertaintyType.contains("variance")){
 						if(doneFlag[typeIndexVar] == false){
-							double dev = calcVariance(nullFlag, sum, supplyValArr);
+							double dev = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
 							bufferSet.get(typeIndexVar)[tgtIndex] = dev;
 							tiles.get(typeIndexVar).drawTiles(mean, dev, tgtIndex, lat, lng);
 						}	
 					}
-					else if(uncertaintyType.contains("entropy")){
+					if(uncertaintyType.contains("entropy")){
 						if(doneFlag[typeIndexEnt] == false){
-							double entropy = calcEntropy(nullFlag, sum, supplyValArr);
+							double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
 							bufferSet.get(typeIndexEnt)[tgtIndex] = entropy;
 							tiles.get(typeIndexEnt).drawTiles(mean, entropy, tgtIndex, lat, lng);
 						}
@@ -361,15 +339,15 @@ public class GenerateUncertaintyTiles {
 	    return true;
 	}
 	
-	public double calcMean(boolean isNullExisted, double sum, int num){
-		if(num == 0)
+	public double calcMean(boolean isNullExisted, double sum, int nonNANCount){
+		if(nonNANCount == 0)
 			return -1;
 		else
-			return sum/num;
+			return sum/(double)nonNANCount;
 	}
 	
 	
-	public double calcVariance(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){
+	public double calcVariance(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr, int nonNANCount){
 		if(!isNullExisted){
 			double mean = (double) (sum/(double)supplyValArr.size());
 			double sqrsum = 0;
@@ -379,7 +357,7 @@ public class GenerateUncertaintyTiles {
 					sqrsum+= Math.pow((Double.valueOf(supplyValArr.get(i))-mean), 2.0);
 				}
 			}
-			var = sqrsum/5.0;	
+			var = sqrsum/(double)nonNANCount;	
 			return var;
 		}
 		else
@@ -387,7 +365,7 @@ public class GenerateUncertaintyTiles {
 	}
 	
 	
-	public double calcEntropy(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){
+	public double calcEntropy(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr, int nonNANCount){
 		if(!isNullExisted){
 			double[] occurences = new double[4];
 			double entropy = 0;
@@ -402,8 +380,8 @@ public class GenerateUncertaintyTiles {
 //			Normalize the entropy, referred to http://www.endmemo.com/bio/shannonentropy.php
 			entropy = -(occurences[0]*Math.log(occurences[0]) + occurences[1]*Math.log(occurences[1]) + occurences[2]*Math.log(occurences[2])
 							+ occurences[3]*Math.log(occurences[3]))/Math.log(4.0);
-
-			return entropy;
+			double MaxEntropy = Math.log(supplyValArr.size())/Math.log(4);
+			return entropy/(MaxEntropy-0);
 		}
 		else{
 			return -1;
@@ -411,22 +389,15 @@ public class GenerateUncertaintyTiles {
 	}
 	
 	
-	public double calcVotings(boolean isNullExisted, double sum, ArrayList<Integer> supplyValArr){
+	public double calcVotings(boolean isNullExisted, double mean, ArrayList<Integer> supplyValArr, int nonNANCount){
 		if(isNullExisted)	return -1;
 		else{
-			int[] occurences = new int[4];
-			double maxNum=0;
-			occurences[0] = Collections.frequency(supplyValArr, 1);
-			occurences[1] = Collections.frequency(supplyValArr, 2);
-			occurences[2] = Collections.frequency(supplyValArr, 3);
-			occurences[3] = Collections.frequency(supplyValArr, 4);
-			for(int i=0; i < occurences.length; i++){
-				if(maxNum < occurences[i]){
-					maxNum = occurences[i];
-				}
+			double votings = 0;
+			for(int i=0; i<supplyValArr.size(); i++){
+				if(Double.valueOf(supplyValArr.get(i)) == Math.round(mean))
+					votings++;
 			}
-			double percent = maxNum/5.0;
-//			double votings = maxIndex*10.0 + percent*10.0;
+			double percent = votings/(double)nonNANCount;
 			return percent;
 		}		
 	}

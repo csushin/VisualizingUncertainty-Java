@@ -20,7 +20,7 @@ import sun.misc.BASE64Encoder;
 
 public class GenerateTiles {
 	private String outputPath;
-	private String[] rgbTable = {"255,0,0", "254,178,76", "173,221,142", "49,163,84"};
+	private String[] rgbTable = {"255,0,0", "254,178,76", "240,210,0", "49,163,84"};
 	private int[] alphaTable;
 	private Point2D initialTopLeftPoint;
 //	private static double MAX_LATITUDE = 85.0511287798;
@@ -125,22 +125,29 @@ public class GenerateTiles {
 		int result = 0;
 		double min=0, max=0;
 		if(this.getType().equals("variance")){
-			min = 0;
 //			according to the formula on:
 //			http://math.stackexchange.com/questions/83046/maximum-of-the-variance-function-for-given-set-of-bounded-numbers
 //			the max of variance is 
-			max = 25.0/4.0;
-			result = (int) Math.round((val-min)*255.0/(max-min));
+			max = Math.pow(4.0-1.0, 2)/4.0;
+			if( val > max){
+				System.out.println("larger variance  value than max 1.0 is: " + val);
+			}
+			result = this.clamp((int) Math.round((val-min)*255.0/(max-min)), 0, 255);
 		}
 		else if(this.getType().equals("entropy")){
-			min = 0;
 			max = 1.0;
-			result = (int) Math.round((val-min)*255.0/(max-min));
+			if( val > 1.0){
+				System.out.println("larger entropy value than max 1.0 is: " + val);
+			}
+			result = this.clamp((int) Math.round((val-min)*255.0/(max-min)), 0, 255);
 		}
 		else if(this.getType().equals("agree")){
-			min = 0.4;
 			max = 1.0;
-			result = (int) Math.round((max-val)*255.0/(max-min));
+			if( val > 1.0){
+				System.out.println("larger votings  value than max 1.0 is: " + val);
+			}
+			result = this.clamp((int) Math.round((val-min)*255.0/(max-min)), 0, 255);
+			result = this.clamp(result, 0, 255);
 		}
 		else{
 			System.out.println("Cannot recognize the input type in mapping alpha value during the generation of tiles!");
@@ -186,6 +193,10 @@ public class GenerateTiles {
 		double y = scale * (c * prjPt.getY() + d);
 		result.setLocation(x, y);
 		return result;
+	}
+	
+	public int clamp(int val, int min, int max) {
+	    return Math.max(min, Math.min(max, val));
 	}
 	
 	

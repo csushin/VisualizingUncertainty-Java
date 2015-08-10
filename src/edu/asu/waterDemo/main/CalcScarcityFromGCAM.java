@@ -81,7 +81,6 @@ public class CalcScarcityFromGCAM {
 		try {
 			ncfile = NetcdfDataset.openFile(this.netcdfPath, null);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -106,6 +105,7 @@ public class CalcScarcityFromGCAM {
  			int xStepRatio = (int) (Math.abs(Math.round(lngstepNC/parser.getGeoInfo()[1])));
  			double[] tiffSize = parser.getSize();
  			double[] targetSct = new double[(int) (tiffSize[0]*tiffSize[1])];
+// 			double ratio = Math.pow(10,9)*Math.round(parser.getGeoInfo()[5]*parser.getGeoInfo()[1]/(latstepNC*lngstepNC));
  			for(int y=0; y<tiffSize[0]; y++){
  				for(int x=0; x<tiffSize[1]; x++){
  					int index = (int) (y*tiffSize[1] + x); 
@@ -114,7 +114,8 @@ public class CalcScarcityFromGCAM {
  					double valNC = netcdfDemand[curIndNC];
  					if(!Double.isNaN(valNC) && !Double.isNaN(val)){
  						if(valNC!=0){
- 							targetSct[index] = val*1000/(valNC/100);
+ 							targetSct[index] = val/(valNC*Math.pow(10,9));
+// 							targetSct[index] = val/(valNC*ratio);
  						}
  						else{
  							targetSct[index] = 1701;
@@ -166,10 +167,8 @@ public class CalcScarcityFromGCAM {
 			data = v.read(yearIndex+",:,:");
 		} catch (IOException e) {
 			System.out.println("Exception thrown in reading netcdf File!");
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidRangeException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
 		Object temp=data.getStorage();

@@ -36,6 +36,25 @@ public class GeoserverService {
 		this.style = stlye;
 	}	
 	
+	public boolean quickPreprocess(){
+		CredentialsProvider credsProvider = new BasicCredentialsProvider();
+		credsProvider.setCredentials(
+	            new AuthScope("localhost",  Integer.parseInt(port)),
+	            new UsernamePasswordCredentials("admin", "geoserver"));
+		CloseableHttpClient httpclient = HttpClients.custom()
+                .setDefaultCredentialsProvider(credsProvider)
+                .build();
+		
+		/////////////////////////////////////check if have data///////////////////////////////////////////
+		File data = new File(dataPath);
+		if(data.exists()){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
 	public boolean isExistance() throws ClientProtocolException, IOException{
 		boolean allExistance = true;
 		CredentialsProvider credsProvider = new BasicCredentialsProvider();
@@ -105,10 +124,11 @@ public class GeoserverService {
 		/////////////////////////////////////delete data////////////////////
 		File data = new File(dataPath);
 		if(data.exists()){
-			data.delete();
+		data.delete();
 		}
 		
-		/////////////////////////////////////check if the coverage exists in the geoserver//////////////////////////////////////
+		
+//		/////////////////////////////////////check if the coverage exists in the geoserver//////////////////////////////////////
 		String getCoveragesURL = "http://localhost:"+port+"/geoserver/rest/workspaces/"+ws+"/coveragestores/";
 		HttpGet coverageListGet = new HttpGet(getCoveragesURL);
 		HttpResponse getCoverageResponse = httpclient.execute(coverageListGet);
@@ -167,17 +187,20 @@ public class GeoserverService {
 		StringEntity converageEntity = new StringEntity(createCoverageXmlContent);
 		converageEntity.setContentType("text/xml");
 		loginPost.setEntity(converageEntity);
-		HttpResponse createCoverageResponse = httpclient.execute(loginPost);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(
-				createCoverageResponse.getEntity().getContent()));
-		String buffer = "";
-		String line = reader.readLine();
-		buffer = line;
-		while ((line = reader.readLine()) != null) {
-			buffer += line;
-		}
-		reader.close();
-		System.out.println("create coverage: " + buffer);
+		httpclient.execute(loginPost);
+
+//		To speed up, we close the debuging of creating creating cs
+//		HttpResponse createCoverageResponse = httpclient.execute(loginPost);
+//		BufferedReader reader = new BufferedReader(new InputStreamReader(
+//				createCoverageResponse.getEntity().getContent()));
+//		String buffer = "";
+//		String line = reader.readLine();
+//		buffer = line;
+//		while ((line = reader.readLine()) != null) {
+//			buffer += line;
+//		}
+//		reader.close();
+//		System.out.println("create coverage: " + buffer);
 		
 		/////////////////////////////////////create Single Coverage///////////////////////////////////////////
 		String createLayerURL = "http://localhost:"+port+"/geoserver/rest/workspaces/"+ws+"/coveragestores/"+name+"/coverages";
@@ -186,18 +209,20 @@ public class GeoserverService {
 		layerEntity.setContentType("text/xml");
 		HttpPost layerPost = new HttpPost(createLayerURL);
 		layerPost.setEntity(layerEntity);
-		HttpResponse layerResponse = httpclient.execute(layerPost);
+		httpclient.execute(layerPost);
 		
-		BufferedReader layerReader = new BufferedReader(new InputStreamReader(
-				layerResponse.getEntity().getContent()));
-		String layerBuffer = "";
-		String layerLine = layerReader.readLine();
-		layerBuffer = layerLine;
-		while ((layerLine = layerReader.readLine()) != null) {
-			layerBuffer += layerLine;
-		}
-		layerReader.close();
-		System.out.println("create layer: " + layerBuffer);
+//		Same as the above, regarding the speed.
+//		HttpResponse layerResponse = httpclient.execute(layerPost);
+//		BufferedReader layerReader = new BufferedReader(new InputStreamReader(
+//				layerResponse.getEntity().getContent()));
+//		String layerBuffer = "";
+//		String layerLine = layerReader.readLine();
+//		layerBuffer = layerLine;
+//		while ((layerLine = layerReader.readLine()) != null) {
+//			layerBuffer += layerLine;
+//		}
+//		layerReader.close();
+//		System.out.println("create layer: " + layerBuffer);
 		
 		
 		/////////////////////////////////////style layer///////////////////////////////////////////

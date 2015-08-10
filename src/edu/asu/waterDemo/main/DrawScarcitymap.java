@@ -20,6 +20,8 @@ import javax.ws.rs.core.Context;
 
 
 
+
+import org.apache.http.client.ClientProtocolException;
 /*import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -45,6 +47,7 @@ import org.glassfish.jersey.server.JSONP;
 //import com.mongodb.DB;
 //import com.mongodb.DBCollection;
 //import com.mongodb.DBCursor;
+
 
 
 
@@ -94,170 +97,185 @@ public class DrawScarcitymap {
 		
 		if(message.equals("requestScarcity"))
 		{
-			if(resolution.equals("low")){
-				TiffParser popParser = new TiffParser();
-				TiffParser waterParser = new TiffParser();
-				double[] size = {360, 720};
-				String supplyPath = supplyDir + "BW_10km/" + supplySubDir + "/" + supplyfName;
-				String demandPath = demandDir + "resampled_10km/" + demandfName;
-				popParser.setFilePath(demandPath);
-				waterParser.setFilePath(supplyPath);
-  				if(popParser.parser() && waterParser.parser()){	
-//					double[] scarcity = calScarcity(waterParser, popParser);
-					double[] popData = popParser.getData();
-					double[] waterData = waterParser.getData();
-					List<ListPointsBean> jsonList = new LinkedList<>();
-					ListPointsBean curIndex; 
-//					result.statistics = this.statistics;
-					result.geoInfoUnit = popParser.getGeoUnitPerUW();
-					result.ulLatlng = popParser.getUlLatlng();
-					result.lrLatlng = popParser.getLrLatlng();
-					result.size = popParser.getSize();
-					result.supplyName = supplyfName;
-					double[] stat = new double[2];
-					stat[0] = 999999999;
-					stat[1] = 0;
-					
-					for(int h=0; h<result.size[0] ;h++){
-						for(int w=0; w<result.size[1]; w++){
-							int index = (int)(h*result.size[1]+w);
-							double popVal = popData[index];
-							double waterVal = waterData[index];
-							if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
-								if(popVal>=1){
-									double scarVal = waterVal*1000/popVal;
-									curIndex= new ListPointsBean();
-//									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
-//									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
-//									curIndex.setLat(lat);
-//									curIndex.setLng(lng);								
-									curIndex.setValue(Math.round(scarVal));
-									curIndex.setwIndex(w);
-									curIndex.sethIndex(h);
-									jsonList.add(curIndex);
-									if(stat[0] > scarVal)
-										stat[0] = scarVal;
-									if(stat[1] < scarVal)
-										stat[1] =  scarVal;
-//									System.out.println(scarVal+ "water Val: " + waterVal + "pop Val: "  + popVal);
-								}
-								else if(popVal<1 && popVal>=0){
-									double scarVal = 1701;
-									curIndex= new ListPointsBean();
-//									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
-//									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
-//									curIndex.setLat(lat);
-//									curIndex.setLng(lng);								
-									curIndex.setValue(Math.round(scarVal));
-									curIndex.setwIndex(w);
-									curIndex.sethIndex(h);
-									jsonList.add(curIndex);
-									if(stat[0] > scarVal)
-										stat[0] = scarVal;
-									if(stat[1] < scarVal)
-										stat[1] =  scarVal;
-								}								
-							}
-						}
-					}
-					result.statistics = stat;
-					result.setDataList(jsonList);
-				}
-			}
-			else{
+//			if(resolution.equals("low")){
+//				TiffParser popParser = new TiffParser();
+//				TiffParser waterParser = new TiffParser();
+//				double[] size = {360, 720};
+//				String supplyPath = supplyDir + "BW_10km/" + supplySubDir + "/" + supplyfName;
+//				String demandPath = demandDir + "resampled_10km/" + demandfName;
+//				popParser.setFilePath(demandPath);
+//				waterParser.setFilePath(supplyPath);
+//  				if(popParser.parser() && waterParser.parser()){	
+////					double[] scarcity = calScarcity(waterParser, popParser);
+//					double[] popData = popParser.getData();
+//					double[] waterData = waterParser.getData();
+//					List<ListPointsBean> jsonList = new LinkedList<>();
+//					ListPointsBean curIndex; 
+////					result.statistics = this.statistics;
+//					result.geoInfoUnit = popParser.getGeoUnitPerUW();
+//					result.ulLatlng = popParser.getUlLatlng();
+//					result.lrLatlng = popParser.getLrLatlng();
+//					result.size = popParser.getSize();
+//					result.supplyName = supplyfName;
+//					double[] stat = new double[2];
+//					stat[0] = 999999999;
+//					stat[1] = 0;
+//					
+//					for(int h=0; h<result.size[0] ;h++){
+//						for(int w=0; w<result.size[1]; w++){
+//							int index = (int)(h*result.size[1]+w);
+//							double popVal = popData[index];
+//							double waterVal = waterData[index];
+//							if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
+//								if(popVal>=1){
+//									double scarVal = waterVal*1000/popVal;
+//									curIndex= new ListPointsBean();
+////									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
+////									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
+////									curIndex.setLat(lat);
+////									curIndex.setLng(lng);								
+//									curIndex.setValue(Math.round(scarVal));
+//									curIndex.setwIndex(w);
+//									curIndex.sethIndex(h);
+//									jsonList.add(curIndex);
+//									if(stat[0] > scarVal)
+//										stat[0] = scarVal;
+//									if(stat[1] < scarVal)
+//										stat[1] =  scarVal;
+////									System.out.println(scarVal+ "water Val: " + waterVal + "pop Val: "  + popVal);
+//								}
+//								else if(popVal<1 && popVal>=0){
+//									double scarVal = 1701;
+//									curIndex= new ListPointsBean();
+////									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
+////									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
+////									curIndex.setLat(lat);
+////									curIndex.setLng(lng);								
+//									curIndex.setValue(Math.round(scarVal));
+//									curIndex.setwIndex(w);
+//									curIndex.sethIndex(h);
+//									jsonList.add(curIndex);
+//									if(stat[0] > scarVal)
+//										stat[0] = scarVal;
+//									if(stat[1] < scarVal)
+//										stat[1] =  scarVal;
+//								}								
+//							}
+//						}
+//					}
+//					result.statistics = stat;
+//					result.setDataList(jsonList);
+//				}
+//			}
+//			else{
 //				parameters for geoserver request
 				String port = "8080";
 				String ws = "niger_river";
 				String style = "nr_wscarcity_fm";
-				TiffParser popParser = new TiffParser();
-				TiffParser waterParser = new TiffParser();
-//				double[] size = {3600, 7200};
 				boolean createFlag = false;
 				String scarcityName = demandfName.replace(".tif", "") + "_" + supplyfName;
 				String outputfile = scarcityDir + scarcityName;
 				GeoserverService geoserver = new GeoserverService(scarcityName.replace(".tif", ""), outputfile, port, ws, style);
-				if(geoserver.isExistance()){
+//				Quick step to create scarcity layer
+				if(geoserver.quickPreprocess()){
 					result.created = true;
 					return result;
 				}
 				else{
-//					delete data, delete coverage, delete layer
-					if(geoserver.deleteAll()){
-						createFlag = true;
-					}
-					else{
-						result.created = false;
-						System.out.println("Cannot delete coverage or layer or data!\n");
-						return result;
-					}
-//					create newdata
-					if(createFlag){
-						String supplyPath = supplyDir + "BW_1km"  + File.separatorChar + supplySubDir + File.separatorChar + supplyfName;
-						String demandPath = demandDir + demandfName;
-						popParser.setFilePath(demandPath);
-						waterParser.setFilePath(supplyPath);
-						if(popParser.parser() && waterParser.parser()){	
-							double[] popData = popParser.getData();
-							double[] waterData = waterParser.getData();
-							double[] buf = new double[(int) (waterParser.getySize()*waterParser.getxSize())];
-							int deltaX = 0;
-							int deltaY = 0;
-							if(popParser.getxSize() != waterParser.getxSize() || popParser.getySize() != waterParser.getySize()){
-								deltaX = popParser.getxSize() - waterParser.getxSize();
-								deltaY = popParser.getySize() - waterParser.getySize();
-							}
-							for(int h=0; h<waterParser.getySize() ;h++){
-								for(int w=0; w<waterParser.getxSize(); w++){
-									int wIndex = h*waterParser.getxSize()+w;
-									int popIndex = (h+deltaY)*(waterParser.getxSize()+deltaX) + (w+deltaX);
-									double popVal = popData[popIndex];
-									double waterVal = waterData[wIndex];
-									if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
-										if(popVal>=1 && waterVal>=0){
-											double scarVal = waterVal*1000/popVal;
-//											if(waterVal!=0)
-//												System.out.println("water val is : " + waterVal + " scarcity Val is: " + scarVal);
-											buf[wIndex] = scarVal;
-										}
-										else if(popVal<1 && waterVal>=0){
-											double scarVal = 1701;
-											buf[wIndex] = scarVal;
-										}		
-									}
-									else{
-										buf[wIndex] = -1;
-									}
-								}
-							}
-							Driver driver = gdal.GetDriverByName("GTiff");
-							Dataset dst_ds = driver.Create(outputfile, waterParser.getxSize(), waterParser.getySize(), 1, gdalconst.GDT_Float64);
-							dst_ds.SetGeoTransform(waterParser.getGeoInfo());
-							dst_ds.SetProjection(waterParser.getProjRef());
-							int writeResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, waterParser.getxSize(), waterParser.getySize(), buf);
-							dst_ds.delete();
-							System.out.println("Result for writing geotiff files: " + writeResult);							
-				
-						}
-//						create coverage and layer
-						if(geoserver.generateCoverage())
-						{
-							result.created = true;
-							return result;
-						}
-						else{
-							System.out.println("Error in create covarage and Layer!");
-							result.created = false;
-							return result;
-						}						
-					}
+					result.created = computeAndsave(demandfName, supplyfName, supplySubDir, geoserver, outputfile);		
 				}
-			}
+				
+//				Full step to finish the creating of scarcity layer from a new file
+//				if(geoserver.isExistance()){
+//					result.created = true;
+//					return result;
+//				}
+//				else{
+////					delete data, delete coverage, delete layer
+//					if(geoserver.deleteAll()){
+//						createFlag = true;
+//					}
+//					else{
+//						result.created = false;
+//						System.out.println("Cannot delete coverage or layer or data!\n");
+//						return result;
+//					}
+////					create newdata
+//					if(createFlag){
+//						result.created = computeAndsave(demandfName, supplyfName, supplySubDir, geoserver, outputfile);		
+//					}
+//				}
+//			}
 				
 		}
 		else{
 			result = null;
 		}
 		return result;
+	}
+	
+	
+	public boolean computeAndsave(String demandfName, String supplyfName, String supplySubDir, GeoserverService geoserver, String outputfile) throws ClientProtocolException, IOException{
+		String supplyPath = supplyDir + "BW_1km"  + File.separatorChar + supplySubDir + File.separatorChar + supplyfName;
+		String demandPath = demandDir + demandfName;
+		TiffParser popParser = new TiffParser();
+		TiffParser waterParser = new TiffParser();
+		popParser.setFilePath(demandPath);
+		waterParser.setFilePath(supplyPath);
+		if(popParser.parser() && waterParser.parser()){	
+			double[] popData = popParser.getData();
+			double[] waterData = waterParser.getData();
+			double[] buf = new double[(int) (waterParser.getySize()*waterParser.getxSize())];
+			int deltaX = 0;
+			int deltaY = 0;
+			if(popParser.getxSize() != waterParser.getxSize() || popParser.getySize() != waterParser.getySize()){
+				deltaX = popParser.getxSize() - waterParser.getxSize();
+				deltaY = popParser.getySize() - waterParser.getySize();
+			}
+			for(int h=0; h<waterParser.getySize() ;h++){
+				for(int w=0; w<waterParser.getxSize(); w++){
+					int wIndex = h*waterParser.getxSize()+w;
+					int popIndex = wIndex;
+					if(deltaY!=0 || deltaX!=0){
+						popIndex = (h+deltaY)*(waterParser.getxSize()+deltaX) + (w+deltaX);
+					}
+					double popVal = popData[popIndex];
+					double waterVal = waterData[wIndex];
+					if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
+						if(popVal>=1 && waterVal>=0){
+							double scarVal = waterVal*1000/popVal;
+//							if(waterVal!=0)
+//								System.out.println("water val is : " + waterVal + " scarcity Val is: " + scarVal);
+							buf[wIndex] = scarVal;
+						}
+						else if(popVal<1 && waterVal>=0){
+							double scarVal = 1701;
+							buf[wIndex] = scarVal;
+						}		
+					}
+					else{
+						buf[wIndex] = -1;
+					}
+				}
+			}
+			Driver driver = gdal.GetDriverByName("GTiff");
+			Dataset dst_ds = driver.Create(outputfile, waterParser.getxSize(), waterParser.getySize(), 1, gdalconst.GDT_Float64);
+			dst_ds.SetGeoTransform(waterParser.getGeoInfo());
+			dst_ds.SetProjection(waterParser.getProjRef());
+			int writeResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, waterParser.getxSize(), waterParser.getySize(), buf);
+			dst_ds.delete();
+			System.out.println("Result for writing geotiff files: " + writeResult);							
+
+		}
+//		create coverage and layer
+		if(geoserver.generateCoverage())
+		{
+			return true;
+		}
+		else{
+			System.out.println("Error in create covarage and Layer!");
+			return false;
+		}		
 	}
 	
 
