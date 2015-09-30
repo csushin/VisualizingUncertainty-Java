@@ -161,7 +161,7 @@ public class GenerateUncertaintyTiff {
 			System.out.println("supply path is empty, so it cannot compute and save!");
 			return false;
 		}
-		System.out.println("demand path is:" + dPath);
+		
 		TiffParser dParser = new TiffParser();
 		dParser.setFilePath(dPath);
 		ArrayList<TiffParser> sParserArr = new ArrayList<TiffParser>();
@@ -183,12 +183,12 @@ public class GenerateUncertaintyTiff {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		TiffParser[] parsers = new TiffParser[sPathList.size()];
 		for(int i=0; i<sPathList.size(); i++){
 			sParserArr.add(service[i].getResult());
 		}
 		System.out.println("Program Ends!");
 		sSize = sParserArr.get(0).getSize();
+		System.out.println("Supply Size is:" + sSize[0] + " , " + sSize[1]);
 //		for(int i=0; i<sPathList.size(); i++){
 //			String curSupplyPath = sPathList.get(i);
 //			TiffParser sParser = new TiffParser();
@@ -237,7 +237,7 @@ public class GenerateUncertaintyTiff {
 					}
 					statService[w] = new CalcStatThread(uncertaintyType, ratio, popVal, value, tgtIndex, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt);
 					statServerThread[w] = new Thread(statService[w]);
-					statServerThread[w].run();
+					statServerThread[w].start();
 				}
 				try{
 					for(int w=0; w<tgtWidth; w++){

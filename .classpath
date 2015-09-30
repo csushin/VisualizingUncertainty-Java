@@ -7,50 +7,51 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/asm-all-repackaged-2.2.0-b21.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/cglib-2.2.0-b21.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/guava-14.0.1.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/hk2-api-2.2.0-b21.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/hk2-locator-2.2.0-b21.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/hk2-utils-2.2.0-b21.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jackson-annotations-2.2.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jackson-core-2.2.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jackson-databind-2.2.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jackson-jaxrs-base-2.2.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jackson-jaxrs-json-provider-2.2.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jackson-module-jaxb-annotations-2.2.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/javax.annotation-api-1.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/javax.inject-2.2.0-b21.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/javax.ws.rs-api-2.0.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jaxb-api-2.2.7.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-client.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-common.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-container-servlet.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-container-servlet-core.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-core-1.18.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-multipart-1.18.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/jersey-server.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/json-simple-1.1.1.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/mongo-java-driver-2.12.4.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/opencsv-3.1.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/org.osgi.core-4.2.0.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/osgi-resource-locator-1.0.1.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/persistence-api-1.0.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/validation-api-1.1.0.Final.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/httpclient-cache-4.3.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/fluent-hc-4.3.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/httpmime-4.3.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/httpclient-4.3.2.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/httpcore-4.3.1.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/commons-logging-1.1.3.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/commons-codec-1.6.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/google-maps-services-0.1.4.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/netcdfAll-4.5.jar"/>
-	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/gdal.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.8.0_60">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/asm-all-repackaged-2.2.0-b21.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/cglib-2.2.0-b21.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-codec-1.6.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-logging-1.1.3.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/fluent-hc-4.3.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/gdal.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/geotiff-jai.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/google-maps-services-0.1.4.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/guava-14.0.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hk2-api-2.2.0-b21.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hk2-locator-2.2.0-b21.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hk2-utils-2.2.0-b21.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpclient-4.3.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpclient-cache-4.3.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpcore-4.3.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/httpmime-4.3.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-annotations-2.2.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-core-2.2.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-databind-2.2.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-jaxrs-base-2.2.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-jaxrs-json-provider-2.2.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jackson-module-jaxb-annotations-2.2.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javax.annotation-api-1.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javax.inject-2.2.0-b21.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javax.ws.rs-api-2.0.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxb-api-2.2.7.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-client.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-common.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-container-servlet-core.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-container-servlet.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-core-1.18.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-multipart-1.18.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jersey-server.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/mongo-java-driver-2.12.4.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/netcdfAll-4.5.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/opencsv-3.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/org.osgi.core-4.2.0.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/osgi-resource-locator-1.0.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/persistence-api-1.0.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/validation-api-1.1.0.Final.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
