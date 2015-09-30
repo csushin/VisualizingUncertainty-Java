@@ -110,10 +110,10 @@ public class TiffParser {
 				System.out.println("Getting Data Error! An Error occured in getting pixel value in Dissolved One!");
 			}				
 
-			System.out.println("Driver: " + hDriver.getShortName() + "/"
-					+ hDriver.getLongName());
+//			System.out.println("Driver: " + hDriver.getShortName() + "/"
+//					+ hDriver.getLongName());
 //
-			System.out.println("Size is " + this.xSize + ", " + this.ySize);
+//			System.out.println("Size is " + this.xSize + ", " + this.ySize);
 
 			// get geo information of tiff
 			double[] geoInfo = hDataset.GetGeoTransform();

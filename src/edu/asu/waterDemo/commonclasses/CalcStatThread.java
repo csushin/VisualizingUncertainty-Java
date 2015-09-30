@@ -5,21 +5,23 @@ import java.util.Collections;
 
 public class CalcStatThread implements Runnable{
 	private String types;
-	private double[] supplyValues;
-	private double popValue;
+	private double[] popValue;
 	private double ratio;
 	private ArrayList<double[]> results;
-	private int index;
+	private int startIndex;
+	private int endIndex;
 	private int typeIndexAgree;
 	private int typeIndexVar;
 	private int typeIndexEnt;
+	private ArrayList<TiffParser> supplyParsers;
 	
-	public CalcStatThread(String types, double ratio, double popValue, double[] supplyValues, int index, ArrayList<double[]> bufferSet, int typeIndexAgree, int typeIndexVar, int typeIndexEnt){
+	public CalcStatThread(String types, double ratio, double[] popValue, ArrayList<TiffParser> supplyParsers, int startIndex, int endIndex, ArrayList<double[]> bufferSet, int typeIndexAgree, int typeIndexVar, int typeIndexEnt){
 		this.types = types;
 		this.popValue = popValue;
 		this.ratio = ratio;
-		this.supplyValues = supplyValues;
-		this.index = index;
+		this.supplyParsers = supplyParsers;
+		this.startIndex = startIndex;
+		this.endIndex = endIndex;
 		this.results = bufferSet;
 		this.typeIndexAgree = typeIndexAgree;
 		this.typeIndexEnt = typeIndexEnt;
@@ -31,48 +33,52 @@ public class CalcStatThread implements Runnable{
 	}
 	
 	public void run(){
-		boolean nullFlag = false;
-		int sum = 0;
-		int nonNANCount = 0;
-		ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
-		for(int k=0; k<this.supplyValues.length; k++){
-			double scarVal = 0;
-			double curSupplyVal = this.supplyValues[k];
-			if(!Double.isNaN(this.popValue) && !Double.isNaN(curSupplyVal)){
-				if(this.popValue>=1 && curSupplyVal>=0){
-					scarVal = curSupplyVal/(this.popValue*this.ratio);
+		for(int i=this.startIndex; i<this.endIndex; i++){
+			boolean nullFlag = false;
+			int sum = 0;
+			int nonNANCount = 0;
+			ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
+			double singlePopValue = this.popValue[i];
+			for(int k=0; k<this.supplyParsers.size(); k++){
+				double scarVal = 0;
+				double curSupplyVal = this.supplyParsers.get(k).getData()[i];
+				if(!Double.isNaN(singlePopValue) && !Double.isNaN(curSupplyVal)){
+					if(singlePopValue>=1 && curSupplyVal>=0){
+						scarVal = curSupplyVal/(singlePopValue*this.ratio);
+					}
+					else if(singlePopValue<1 && curSupplyVal>=0){
+						scarVal = 1701;
+					}		
 				}
-				else if(this.popValue<1 && curSupplyVal>=0){
-					scarVal = 1701;
-				}		
-			}
-			else{
-				scarVal = -1;
+				else{
+					scarVal = -1;
+				}
+			
+				//		set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
+				int flag;
+				if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonNANCount++;}
+				else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonNANCount++;}
+				else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonNANCount++;}
+				else if(scarVal>1700)	{flag = 4;sum+=flag;nonNANCount++;}
+				else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
+				supplyValArr.add(flag);
 			}
 		
-			//		set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
-			int flag;
-			if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonNANCount++;}
-			else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonNANCount++;}
-			else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonNANCount++;}
-			else if(scarVal>1700)	{flag = 4;sum+=flag;nonNANCount++;}
-			else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
-			supplyValArr.add(flag);
+			double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
+			if(this.types.contains("agree")){
+					double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
+					this.results.get(this.typeIndexAgree)[i] = votings;
+			}
+			if(this.types.contains("variance")){
+					double variance = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
+					this.results.get(this.typeIndexVar)[i] = variance;
+			}
+			if(this.types.contains("entropy")){
+					double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
+					this.results.get(this.typeIndexEnt)[i] = entropy;
+			}
 		}
-	
-		double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
-		if(this.types.contains("agree")){
-				double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
-				this.results.get(this.typeIndexAgree)[this.index] = votings;
-		}
-		if(this.types.contains("variance")){
-				double variance = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
-				this.results.get(this.typeIndexVar)[this.index] = variance;
-		}
-		if(this.types.contains("entropy")){
-				double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
-				this.results.get(this.typeIndexEnt)[this.index] = entropy;
-		}
+		
 	
 	}
 	

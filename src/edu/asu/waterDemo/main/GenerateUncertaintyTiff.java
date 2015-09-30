@@ -36,6 +36,8 @@ public class GenerateUncertaintyTiff {
 	public String meanEntropyDir;
 	public String meanVotingsDir;
 	
+	private int NUMBER_OF_PROCESSORS = 8;
+	
 	@Context
 	public void setServletContext(ServletContext context) {
 		String osName = System.getProperty("os.name");
@@ -188,6 +190,7 @@ public class GenerateUncertaintyTiff {
 		}
 		System.out.println("Program Ends!");
 		sSize = sParserArr.get(0).getSize();
+		System.out.println("Supply Size is:" + sSize[0] + " , " + sSize[1]);
 //		for(int i=0; i<sPathList.size(); i++){
 //			String curSupplyPath = sPathList.get(i);
 //			TiffParser sParser = new TiffParser();
@@ -218,34 +221,35 @@ public class GenerateUncertaintyTiff {
 			double[] entropy = new double[tgtHeight*tgtWidth];
 			double[] variance = new double[tgtHeight*tgtWidth];
 			double[] votings = new double[tgtHeight*tgtWidth];
+			bufferSet.add(votings);
 			bufferSet.add(entropy);
 			bufferSet.add(variance);
-			bufferSet.add(votings);
 			double ratio = 1/1000.0;
 			System.out.println("Ratio is:" + ratio);
-			for(int h=0; h<tgtHeight; h++){
-				CalcStatThread[] statService = new CalcStatThread[tgtWidth];
-				Thread[] statServerThread = new Thread[tgtWidth];
-				for(int w=0; w<tgtWidth; w++){
-					int tgtIndex = h*tgtWidth+w;
-					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
-					double popVal = dParser.getData()[popIndex];
-					double[] value = new double[sParserArr.size()];
-					for(int i=0; i<sParserArr.size(); i++){
-						value[i] = sParserArr.get(i).getData()[tgtIndex];
-					}
-					statService[w] = new CalcStatThread(uncertaintyType, ratio, popVal, value, tgtIndex, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt);
-					statServerThread[w] = new Thread(statService[w]);
-					statServerThread[w].start();
+			CalcStatThread[] statService = new CalcStatThread[NUMBER_OF_PROCESSORS];
+			Thread[] statServerThread = new Thread[NUMBER_OF_PROCESSORS];
+			int delta = tgtHeight/NUMBER_OF_PROCESSORS;
+			for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+				int h1 = i * delta;
+				int h2 = (i+1) * delta;
+				int startIndex = h1 * tgtWidth;
+				int endIndex =  h2 * tgtWidth;
+				statService[i] = new CalcStatThread(uncertaintyType, ratio, dParser.getData(), sParserArr, startIndex, endIndex, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt);
+				statServerThread[i] = new Thread(statService[i]);
+				statServerThread[i].start();
+			}
+			try{
+				for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+					statServerThread[i].join();
+					System.out.println(i + " Finished~");
 				}
-				try{
-					for(int w=0; w<tgtWidth; w++){
-						statServerThread[w].join();
-					}
-				} catch (InterruptedException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			} catch (InterruptedException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println(" Finished~");
+//				System.out.println("Start Processing " + h);
+//				for(int h=0; h<tgtHeight; h++){
 //				for(int w=0; w<tgtWidth; w++){
 //					int tgtIndex = h*tgtWidth+w;
 //					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
@@ -294,7 +298,7 @@ public class GenerateUncertaintyTiff {
 //					}
 //					
 //				}
-			}
+//			}
 			for(int i=0; i<outputfile.length; i++){
 //				write geotiff files
 				Driver driver = gdal.GetDriverByName("GTiff");
