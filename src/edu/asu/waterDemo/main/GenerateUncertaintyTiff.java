@@ -20,6 +20,7 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
+import edu.asu.waterDemo.commonclasses.CalcStatThread;
 import edu.asu.waterDemo.commonclasses.TiffParser;
 import edu.asu.waterDemo.commonclasses.LoadTiffThread;
 
@@ -174,8 +175,6 @@ public class GenerateUncertaintyTiff {
 			serverThread[i] = new Thread(service[i]);
 			serverThread[i].start();
 		}
-		
-		
 		try {
 			for(int i=0; i<sPathList.size(); i++){
 				serverThread[i].join();
@@ -184,12 +183,12 @@ public class GenerateUncertaintyTiff {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		TiffParser[] parsers = new TiffParser[sPathList.size()];
 		for(int i=0; i<sPathList.size(); i++){
 			sParserArr.add(service[i].getResult());
-			System.out.println("Program Ends!");
 		}
+		System.out.println("Program Ends!");
+		sSize = sParserArr.get(0).getSize();
 //		for(int i=0; i<sPathList.size(); i++){
 //			String curSupplyPath = sPathList.get(i);
 //			TiffParser sParser = new TiffParser();
@@ -203,7 +202,6 @@ public class GenerateUncertaintyTiff {
 //				return false;
 //			}
 //		}
-
 		ArrayList<double[]> bufferSet = new ArrayList<double[]>();
 		if(dParser.parser() && !sParserArr.isEmpty()){
 			int tgtHeight = (int)sSize[0];
@@ -218,58 +216,85 @@ public class GenerateUncertaintyTiff {
 			int typeIndexAgree = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
 			int typeIndexVar = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
 			int typeIndexEnt = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
+			double[] entropy = new double[tgtHeight*tgtWidth];
+			double[] variance = new double[tgtHeight*tgtWidth];
+			double[] votings = new double[tgtHeight*tgtWidth];
+			bufferSet.add(entropy);
+			bufferSet.add(variance);
+			bufferSet.add(votings);
 			double ratio = 1/1000.0;
 			System.out.println("Ratio is:" + ratio);
 			for(int h=0; h<tgtHeight; h++){
-				
+				CalcStatThread[] statService = new CalcStatThread[tgtWidth];
+				Thread[] statServerThread = new Thread[tgtWidth];
 				for(int w=0; w<tgtWidth; w++){
 					int tgtIndex = h*tgtWidth+w;
 					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
 					double popVal = dParser.getData()[popIndex];
-					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
-					int sum = 0;
-					boolean nullFlag = false;
-					int nonNANCount  = 0;
-					for(int k=0; k<sParserArr.size(); k++){
-						double scarVal = 0;
-						double curSupplyVal = sParserArr.get(k).getData()[tgtIndex];
-						if(!Double.isNaN(popVal) && !Double.isNaN(curSupplyVal)){
-							if(popVal>=1 && curSupplyVal>=0){
-								scarVal = curSupplyVal/(popVal*ratio);
-							}
-							else if(popVal<1 && curSupplyVal>=0){
-								scarVal = 1701;
-							}		
-						}
-						else{
-							scarVal = -1;
-						}
-						
-//						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
-						int flag;
-						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonNANCount++;}
-						else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonNANCount++;}
-						else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonNANCount++;}
-						else if(scarVal>1700)	{flag = 4;sum+=flag;nonNANCount++;}
-						else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
-						supplyValArr.add(flag);
+					double[] value = new double[sParserArr.size()];
+					for(int i=0; i<sParserArr.size(); i++){
+						value[i] = sParserArr.get(i).getData()[tgtIndex];
 					}
-					
-					double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
-					if(uncertaintyType.contains("agree")){
-							double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
-							bufferSet.get(typeIndexAgree)[tgtIndex] = votings;
-					}
-					if(uncertaintyType.contains("variance")){
-							double variance = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
-							bufferSet.get(typeIndexVar)[tgtIndex] = variance;
-					}
-					if(uncertaintyType.contains("entropy")){
-							double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
-							bufferSet.get(typeIndexEnt)[tgtIndex] = entropy;
-					}
-					
+					statService[w] = new CalcStatThread(uncertaintyType, ratio, popVal, value, tgtIndex, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt);
+					statServerThread[w] = new Thread(statService[w]);
+					statServerThread[w].run();
 				}
+				try{
+					for(int w=0; w<tgtWidth; w++){
+						statServerThread[w].join();
+					}
+				} catch (InterruptedException e){
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+//				for(int w=0; w<tgtWidth; w++){
+//					int tgtIndex = h*tgtWidth+w;
+//					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
+//					double popVal = dParser.getData()[popIndex];
+//					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
+//					int sum = 0;
+//					boolean nullFlag = false;
+//					int nonNANCount  = 0;
+//					for(int k=0; k<sParserArr.size(); k++){
+//						double scarVal = 0;
+//						double curSupplyVal = sParserArr.get(k).getData()[tgtIndex];
+//						if(!Double.isNaN(popVal) && !Double.isNaN(curSupplyVal)){
+//							if(popVal>=1 && curSupplyVal>=0){
+//								scarVal = curSupplyVal/(popVal*ratio);
+//							}
+//							else if(popVal<1 && curSupplyVal>=0){
+//								scarVal = 1701;
+//							}		
+//						}
+//						else{
+//							scarVal = -1;
+//						}
+//						
+////						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
+//						int flag;
+//						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonNANCount++;}
+//						else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonNANCount++;}
+//						else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonNANCount++;}
+//						else if(scarVal>1700)	{flag = 4;sum+=flag;nonNANCount++;}
+//						else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
+//						supplyValArr.add(flag);
+//					}
+//					
+//					double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
+//					if(uncertaintyType.contains("agree")){
+//							double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
+//							bufferSet.get(typeIndexAgree)[tgtIndex] = votings;
+//					}
+//					if(uncertaintyType.contains("variance")){
+//							double variance = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
+//							bufferSet.get(typeIndexVar)[tgtIndex] = variance;
+//					}
+//					if(uncertaintyType.contains("entropy")){
+//							double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
+//							bufferSet.get(typeIndexEnt)[tgtIndex] = entropy;
+//					}
+//					
+//				}
 			}
 			for(int i=0; i<outputfile.length; i++){
 //				write geotiff files
