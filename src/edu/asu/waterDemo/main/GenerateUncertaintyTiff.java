@@ -221,6 +221,7 @@ public class GenerateUncertaintyTiff {
 			double ratio = 1/1000.0;
 			System.out.println("Ratio is:" + ratio);
 			for(int h=0; h<tgtHeight; h++){
+				
 				for(int w=0; w<tgtWidth; w++){
 					int tgtIndex = h*tgtWidth+w;
 					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
