@@ -37,7 +37,14 @@ public class TiffParser {
 		this.geoInfo = geoInfo;
 	}
 
-	public TiffParser(){}
+	public TiffParser(){
+		
+	}
+	
+	public TiffParser(String filePath){
+		this.setFilePath(filePath);
+		this.parser();
+	}
 	
 	public int getXoff() {
 		return xoff;
@@ -69,6 +76,10 @@ public class TiffParser {
 
 	public void setySize(int ySize) {
 		this.ySize = ySize;
+	}
+	
+	public void close(){
+		this.data = null;
 	}
 
 	public boolean parser(){

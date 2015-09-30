@@ -1,3 +1,4 @@
+// The role of this class is the same as the role of class CalcUncertaintyOnce, but it calculates the mean to stat once a time
 package edu.asu.waterDemo.main;
 
 //import java.io.BufferedReader;

@@ -97,77 +97,77 @@ public class DrawScarcitymap {
 		
 		if(message.equals("requestScarcity"))
 		{
-//			if(resolution.equals("low")){
-//				TiffParser popParser = new TiffParser();
-//				TiffParser waterParser = new TiffParser();
-//				double[] size = {360, 720};
-//				String supplyPath = supplyDir + "BW_10km/" + supplySubDir + "/" + supplyfName;
-//				String demandPath = demandDir + "resampled_10km/" + demandfName;
-//				popParser.setFilePath(demandPath);
-//				waterParser.setFilePath(supplyPath);
-//  				if(popParser.parser() && waterParser.parser()){	
-////					double[] scarcity = calScarcity(waterParser, popParser);
-//					double[] popData = popParser.getData();
-//					double[] waterData = waterParser.getData();
-//					List<ListPointsBean> jsonList = new LinkedList<>();
-//					ListPointsBean curIndex; 
-////					result.statistics = this.statistics;
-//					result.geoInfoUnit = popParser.getGeoUnitPerUW();
-//					result.ulLatlng = popParser.getUlLatlng();
-//					result.lrLatlng = popParser.getLrLatlng();
-//					result.size = popParser.getSize();
-//					result.supplyName = supplyfName;
-//					double[] stat = new double[2];
-//					stat[0] = 999999999;
-//					stat[1] = 0;
-//					
-//					for(int h=0; h<result.size[0] ;h++){
-//						for(int w=0; w<result.size[1]; w++){
-//							int index = (int)(h*result.size[1]+w);
-//							double popVal = popData[index];
-//							double waterVal = waterData[index];
-//							if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
-//								if(popVal>=1){
-//									double scarVal = waterVal*1000/popVal;
-//									curIndex= new ListPointsBean();
-////									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
-////									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
-////									curIndex.setLat(lat);
-////									curIndex.setLng(lng);								
-//									curIndex.setValue(Math.round(scarVal));
-//									curIndex.setwIndex(w);
-//									curIndex.sethIndex(h);
-//									jsonList.add(curIndex);
-//									if(stat[0] > scarVal)
-//										stat[0] = scarVal;
-//									if(stat[1] < scarVal)
-//										stat[1] =  scarVal;
-////									System.out.println(scarVal+ "water Val: " + waterVal + "pop Val: "  + popVal);
-//								}
-//								else if(popVal<1 && popVal>=0){
-//									double scarVal = 1701;
-//									curIndex= new ListPointsBean();
-////									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
-////									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
-////									curIndex.setLat(lat);
-////									curIndex.setLng(lng);								
-//									curIndex.setValue(Math.round(scarVal));
-//									curIndex.setwIndex(w);
-//									curIndex.sethIndex(h);
-//									jsonList.add(curIndex);
-//									if(stat[0] > scarVal)
-//										stat[0] = scarVal;
-//									if(stat[1] < scarVal)
-//										stat[1] =  scarVal;
-//								}								
-//							}
-//						}
-//					}
-//					result.statistics = stat;
-//					result.setDataList(jsonList);
-//				}
-//			}
-//			else{
+			if(resolution.equals("low")){
+				TiffParser popParser = new TiffParser();
+				TiffParser waterParser = new TiffParser();
+				double[] size = {360, 720};
+				String supplyPath = supplyDir + "BW_10km/" + supplySubDir + "/" + supplyfName;
+				String demandPath = demandDir + "resampled_10km/" + demandfName;
+				popParser.setFilePath(demandPath);
+				waterParser.setFilePath(supplyPath);
+  				if(popParser.parser() && waterParser.parser()){	
+//					double[] scarcity = calScarcity(waterParser, popParser);
+					double[] popData = popParser.getData();
+					double[] waterData = waterParser.getData();
+					List<ListPointsBean> jsonList = new LinkedList<>();
+					ListPointsBean curIndex; 
+//					result.statistics = this.statistics;
+					result.geoInfoUnit = popParser.getGeoUnitPerUW();
+					result.ulLatlng = popParser.getUlLatlng();
+					result.lrLatlng = popParser.getLrLatlng();
+					result.size = popParser.getSize();
+					result.supplyName = supplyfName;
+					double[] stat = new double[2];
+					stat[0] = 999999999;
+					stat[1] = 0;
+					
+					for(int h=0; h<result.size[0] ;h++){
+						for(int w=0; w<result.size[1]; w++){
+							int index = (int)(h*result.size[1]+w);
+							double popVal = popData[index];
+							double waterVal = waterData[index];
+							if(!Double.isNaN(popVal) && !Double.isNaN(waterVal)){
+								if(popVal>=1){
+									double scarVal = waterVal*1000/popVal;
+									curIndex= new ListPointsBean();
+//									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
+//									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
+//									curIndex.setLat(lat);
+//									curIndex.setLng(lng);								
+									curIndex.setValue(Math.round(scarVal));
+									curIndex.setwIndex(w);
+									curIndex.sethIndex(h);
+									jsonList.add(curIndex);
+									if(stat[0] > scarVal)
+										stat[0] = scarVal;
+									if(stat[1] < scarVal)
+										stat[1] =  scarVal;
+//									System.out.println(scarVal+ "water Val: " + waterVal + "pop Val: "  + popVal);
+								}
+								else if(popVal<1 && popVal>=0){
+									double scarVal = 1701;
+									curIndex= new ListPointsBean();
+//									double lat = result.ulLatlng[0] + h*result.geoInfoUnit[0];
+//									double lng = result.ulLatlng[1] + w*result.geoInfoUnit[1];
+//									curIndex.setLat(lat);
+//									curIndex.setLng(lng);								
+									curIndex.setValue(Math.round(scarVal));
+									curIndex.setwIndex(w);
+									curIndex.sethIndex(h);
+									jsonList.add(curIndex);
+									if(stat[0] > scarVal)
+										stat[0] = scarVal;
+									if(stat[1] < scarVal)
+										stat[1] =  scarVal;
+								}								
+							}
+						}
+					}
+					result.statistics = stat;
+					result.setDataList(jsonList);
+				}
+			}
+			else{
 //				parameters for geoserver request
 				String port = "8080";
 				String ws = "niger_river";
@@ -207,6 +207,7 @@ public class DrawScarcitymap {
 //				}
 //			}
 				
+		}
 		}
 		else{
 			result = null;

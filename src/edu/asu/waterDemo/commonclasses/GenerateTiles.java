@@ -14,7 +14,10 @@ import javax.imageio.ImageIO;
 
 
 
+
 import org.apache.commons.codec.binary.Base64;
+
+import com.google.common.primitives.Ints;
 
 import sun.misc.BASE64Encoder;
 
@@ -32,8 +35,18 @@ public class GenerateTiles {
 	private Point pixelNE;
 	private String type;
 	private int zoomLevel;
+	public static int INFINITE = -99999;
 
 
+	//	To get the initialTopLeftMapPoint, we should call the map.getPixelOrigin() function in leaflet	
+	public GenerateTiles(String outputfile, Point2D mapOrigin, String type, int zoomLevel, String[] tfFunction){
+		this.setOutputPath(outputfile);	
+		this.setType(type);
+		this.setInitialTopLeftPoint(mapOrigin);
+		this.setZoomLevel(zoomLevel);
+		this.setRGBTable(tfFunction);
+	}	
+	
 	//	To get the initialTopLeftMapPoint, we should call the map.getPixelOrigin() function in leaflet	
 	public GenerateTiles(String outputfile, Point2D mapOrigin, String type, int zoomLevel){
 		this.setOutputPath(outputfile);	
@@ -120,7 +133,7 @@ public class GenerateTiles {
 //	return the value from 0~255
 	private int indexAlpha(double val, double meanVal){
 //		set the full transparency for those NaN Values
-		if(val == -1 || meanVal == -1)
+		if(val == -1 || meanVal == -1 || meanVal == INFINITE)
 			return 0;
 		int result = 0;
 		double min=0, max=0;
@@ -149,6 +162,12 @@ public class GenerateTiles {
 			result = this.clamp((int) Math.round((val-min)*255.0/(max-min)), 0, 255);
 			result = this.clamp(result, 0, 255);
 		}
+		else if(this.getType().equals("predJoint") || this.getType().equals("evd")){
+			if(meanVal == INFINITE )
+				result = 0;
+			else
+				result = 255;
+		}
 		else{
 			System.out.println("Cannot recognize the input type in mapping alpha value during the generation of tiles!");
 		}
@@ -158,20 +177,39 @@ public class GenerateTiles {
 	
 //	return the value from 0~255 in the order of r/g/b
 	private int[] indexRGB(double val){
-		if(val == -1){
-			int[] result = {255,255,255};
+		if(this.getType().equals("predJoint") || this.getType().equals("evd")){
+			int[] result = new int[3];
+			if(val==INFINITE){
+				result[0] = 0;
+				result[1] = 0;
+				result[2] = 0;			
+			}
+			else{
+//				if(val>2)
+//					System.out.println(val);
+				String color = this.getRGBTable()[(int) val];
+				result[0] = Integer.valueOf(color.split(",")[0]);
+				result[1] = Integer.valueOf(color.split(",")[1]);
+				result[2] = Integer.valueOf(color.split(",")[2]);				
+			}
 			return result;
 		}
-		int[] result = new int[3];
-		int index = (int) Math.round(val);
-//		for those whose mean is 0.xxx<0.5, assigning them to 1 (Abs. Scar.)
-		if(index == 0)
-				index = 1;
-		String color = this.getRGBTable()[index-1];
-		result[0] = Integer.valueOf(color.split(",")[0]);
-		result[1] = Integer.valueOf(color.split(",")[1]);
-		result[2] = Integer.valueOf(color.split(",")[2]);
-		return result;
+		else{
+			if(val == -1){
+				int[] result = {255,255,255};
+				return result;
+			}
+			int[] result = new int[3];
+			int index = (int) Math.round(val);
+//			for those whose mean is 0.xxx<0.5, assigning them to 1 (Abs. Scar.)
+			if(index == 0)
+					index = 1;
+			String color = this.getRGBTable()[index-1];
+			result[0] = Integer.valueOf(color.split(",")[0]);
+			result[1] = Integer.valueOf(color.split(",")[1]);
+			result[2] = Integer.valueOf(color.split(",")[2]);
+			return result;			
+		}
 	}
 	
 	private Point latLngToLayerPoint(LatLng latlng){

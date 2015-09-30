@@ -47,7 +47,7 @@
 	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/google-maps-services-0.1.4.jar"/>
 	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/netcdfAll-4.5.jar"/>
 	<classpathentry kind="lib" path="E:/EclipseProjects/waterDemo/WebContent/WEB-INF/lib/gdal.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.8.0_51">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre1.8.0_60">
 		<attributes>
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>

@@ -1,6 +1,5 @@
 package edu.asu.waterDemo.main;
 
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,18 +20,11 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
-import edu.asu.waterDemo.commonclasses.GenerateTiles;
-import edu.asu.waterDemo.commonclasses.LatLng;
 import edu.asu.waterDemo.commonclasses.TiffParser;
+import edu.asu.waterDemo.commonclasses.LoadTiffThread;
 
-
-@Path("/genUncertaintyTile")
-public class GenerateUncertaintyTiles {
-	
-	public class imgBase64{
-		public String[] imgStr = new String[3];
-	}
-	
+@Path("/genUncertaintyTiff")
+public class GenerateUncertaintyTiff {
 	public String supplyDir;
 	public String demandDir;
 	public String agreeDir;
@@ -75,97 +67,63 @@ public class GenerateUncertaintyTiles {
 	@GET
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
-	public imgBase64 query(
+	public boolean query(
 			@QueryParam("demandfName") @DefaultValue("null") String demandfName,
 			@QueryParam("emissionType") @DefaultValue("null") String emission,
 			@QueryParam("scenarioType") @DefaultValue("null") String scenario,
 			@QueryParam("uncertaintyType") @DefaultValue("agree") String uncertaintyType,
-			@QueryParam("oldData") @DefaultValue("old") String oldData,
-			@QueryParam("mapPixelOrigin") @DefaultValue("0,0") String mapPixelOrigin,
-			@QueryParam("zoomLevel") @DefaultValue("7") int zoomLevel) throws IOException {
-		imgBase64 result = new imgBase64();
-		
+			@QueryParam("oldData") @DefaultValue("old") String oldData) throws IOException {
 //		initialize the output dir, path ,and filenames
 		int jobNum = uncertaintyType.split(",").length;
 		String[] fileName = new String[jobNum];
 		String[] outputfile = new String[jobNum];
 		String[] outputDir = new String[jobNum];
+		boolean anynotexist = false;
 		if(uncertaintyType.contains("agree")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_" + oldData +"_MeanVotings.png";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_MeanVotings.tif";
 			outputfile[index] = this.meanVotingsDir + fileName[index];
 			outputDir[index] = this.meanVotingsDir;
+			File file = new File(fileName[index]);
+			if(!file.exists())
+				anynotexist = true;
 		}
 		if(uncertaintyType.contains("variance")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_" + oldData +"_MeanVariance.png";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_MeanVariance.tif";
 			outputfile[index] = this.meanVarianceDir + fileName[index];
 			outputDir[index] = this.meanVarianceDir;	
+			File file = new File(fileName[index]);
+			if(!file.exists())
+				anynotexist = true;
 		}
 		if(uncertaintyType.contains("entropy")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + zoomLevel + "_" + oldData +"_MeanEntropy.png";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_MeanEntropy.tif";
 			outputfile[index] = this.meanEntropyDir + fileName[index];
 			outputDir[index] = this.meanEntropyDir;
+			File file = new File(fileName[index]);
+			if(!file.exists())
+				anynotexist = true;
 		}
-		
-//		initialize the class GenerateTiles
+		if(!anynotexist)
+			return true;
+
+		//		initialize the class GenerateTiles
 		String demandPath = this.demandDir + demandfName;
-		ArrayList<GenerateTiles> tiles = new ArrayList<GenerateTiles>();
-		String[] mapPixelOriginArr = mapPixelOrigin.split(",");
-		for(int i=0; i<outputfile.length; i++){
-			Point2D mapPixelOriginPt = new Point2D.Double();
-			mapPixelOriginPt.setLocation(Integer.valueOf(mapPixelOriginArr[0]), Integer.valueOf(mapPixelOriginArr[1]));
-			GenerateTiles tile = new GenerateTiles(outputfile[i], mapPixelOriginPt, uncertaintyType.split(",")[i], zoomLevel);
-			tiles.add(tile);				
-		}
 		
-//		check if the png tiles are existed in the local disk and convert them to the base64 string
-		boolean[] doneFlag = new boolean[jobNum];
-		for(int i=0; i<jobNum; i++){
-			if(checkIfTileExist(outputDir[i], fileName[i])){
-				doneFlag[i] = true;
-				String path = outputDir[i] + fileName[i];
-				result.imgStr[i] = tiles.get(i).encodeFromReaderToBase64(path, "PNG");
-				if(result.imgStr[i] == null){
-//					Error in reading the png files, so we need to regenerate that file
-					doneFlag[i] = false;
-				}
-			}
-			else{
-				result.imgStr[i] = null;
-				doneFlag[i] = false;
-			}
-		}
-		
-		if(isAllTrue(doneFlag)){
-			return result;
-		}
 		
 //		generate new tiles
 		ArrayList<String> supplyPathList = getAllSupplies(demandPath, this.supplyDir, emission, scenario, uncertaintyType, oldData);
-		if(computeAndsave(demandPath, supplyPathList, outputfile, uncertaintyType, doneFlag, tiles, result, oldData)){
-			return result;		
+		if(computeAndsave(demandPath, supplyPathList, outputfile, uncertaintyType, oldData)){
+			return true;		
 		}
 		else{
 			System.out.println("Can't create geotiff image!");	
-			return null;
+			return false;
 		}			
 	}
-	
-	private boolean checkIfTileExist(String targetDir, String fileName) {
-		ArrayList<File> allFiles = new ArrayList<File>();
-		allFiles = this.getAllFiles(targetDir, allFiles); 
-		for (int j = 0; j < allFiles.size(); j++) {
-			if (allFiles.get(j).isFile()) {
-				String eachFile = allFiles.get(j).getName();
-				if(eachFile.contains(fileName)){
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+
 
 	public ArrayList<String> getAllSupplies(String demandPath, String supplyDir, String emission, String scenario, String uncertaintyType, String oldData) throws IOException{
 		ArrayList<File> supplyListOfFiles = new ArrayList<File>();
@@ -197,8 +155,7 @@ public class GenerateUncertaintyTiles {
 		return supplyPathList;
 	}
 	
-	public boolean computeAndsave(String dPath, ArrayList<String> sPathList, String outputfile[], String uncertaintyType, boolean[] doneFlag, 
-			ArrayList<GenerateTiles> tiles, imgBase64 result, String oldData) throws IOException{
+	public boolean computeAndsave(String dPath, ArrayList<String> sPathList, String outputfile[], String uncertaintyType, String oldData) throws IOException{
 		if(sPathList.isEmpty())	{
 			System.out.println("supply path is empty, so it cannot compute and save!");
 			return false;
@@ -208,30 +165,46 @@ public class GenerateUncertaintyTiles {
 		dParser.setFilePath(dPath);
 		ArrayList<TiffParser> sParserArr = new ArrayList<TiffParser>();
 		double[] sSize = {};
-//		double[] dSize = dParser.getSize();
+		
+		LoadTiffThread[] service = new LoadTiffThread[sPathList.size()];
+		Thread[] serverThread = new Thread[sPathList.size()];
 		for(int i=0; i<sPathList.size(); i++){
-			String curSupplyPath = sPathList.get(i);
-			TiffParser sParser = new TiffParser();
-			sParser.setFilePath(curSupplyPath);
-			if(sParser.parser()){
-				sParserArr.add(sParser);
-				sSize = sParser.getSize();
-			}
-			else {
-				System.out.println("Error in parsing supply files!");
-				return false;
-			}
+			String filePath = sPathList.get(i);
+			service[i] = new LoadTiffThread(filePath);
+			serverThread[i] = new Thread(service[i]);
+			serverThread[i].start();
 		}
+		
+		
+		try {
+			for(int i=0; i<sPathList.size(); i++){
+				serverThread[i].join();
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		TiffParser[] parsers = new TiffParser[sPathList.size()];
+		for(int i=0; i<sPathList.size(); i++){
+			sParserArr.add(service[i].getResult());
+			System.out.println("Program Ends!");
+		}
+//		for(int i=0; i<sPathList.size(); i++){
+//			String curSupplyPath = sPathList.get(i);
+//			TiffParser sParser = new TiffParser();
+//			sParser.setFilePath(curSupplyPath);
+//			if(sParser.parser()){
+//				sParserArr.add(sParser);
+//				sSize = sParser.getSize();
+//			}
+//			else {
+//				System.out.println("Error in parsing supply files!");
+//				return false;
+//			}
+//		}
 
 		ArrayList<double[]> bufferSet = new ArrayList<double[]>();
-		for(int i=0; i<outputfile.length; i++){
-			double[] buf = new double[(int) (sSize[0]*sSize[1])];
-			bufferSet.add(buf);	
-			LatLng southwest = new LatLng(sParserArr.get(0).getLrLatlng()[0], sParserArr.get(0).getUlLatlng()[1]);
-			LatLng northeast = new LatLng(sParserArr.get(0).getUlLatlng()[0], sParserArr.get(0).getLrLatlng()[1]);
-			tiles.get(i).processWidthHeight((int) sSize[1], (int) sSize[0], southwest, northeast);
-			tiles.get(i).initializeBufferImage();
-		}
 		if(dParser.parser() && !sParserArr.isEmpty()){
 			int tgtHeight = (int)sSize[0];
 			int tgtWidth = (int)sSize[1];
@@ -245,20 +218,12 @@ public class GenerateUncertaintyTiles {
 			int typeIndexAgree = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
 			int typeIndexVar = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
 			int typeIndexEnt = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
-			double latstepNC = 0.5;
-			double lngstepNC = 0.5;
-//			double ratio = 1.0;
 			double ratio = 1/1000.0;
-//			if(oldData.equalsIgnoreCase("new")){
-//				ratio = Math.pow(10,9);
-//			}
 			System.out.println("Ratio is:" + ratio);
 			for(int h=0; h<tgtHeight; h++){
 				for(int w=0; w<tgtWidth; w++){
 					int tgtIndex = h*tgtWidth+w;
 					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
-					double lat = sParserArr.get(0).getUlLatlng()[0] + h*sParserArr.get(0).getGeoInfo()[5];
-					double lng = sParserArr.get(0).getUlLatlng()[1] + w*sParserArr.get(0).getGeoInfo()[1];
 					double popVal = dParser.getData()[popIndex];
 					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
 					int sum = 0;
@@ -291,45 +256,31 @@ public class GenerateUncertaintyTiles {
 					
 					double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
 					if(uncertaintyType.contains("agree")){
-						if(doneFlag[typeIndexAgree] == false){
 							double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
 							bufferSet.get(typeIndexAgree)[tgtIndex] = votings;
-							tiles.get(typeIndexAgree).drawTiles(mean, votings, tgtIndex, lat, lng);
-						}
 					}
 					if(uncertaintyType.contains("variance")){
-						if(doneFlag[typeIndexVar] == false){
 							double variance = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
 							bufferSet.get(typeIndexVar)[tgtIndex] = variance;
-							tiles.get(typeIndexVar).drawTiles(mean, variance, tgtIndex, lat, lng);
-						}	
 					}
 					if(uncertaintyType.contains("entropy")){
-						if(doneFlag[typeIndexEnt] == false){
 							double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
 							bufferSet.get(typeIndexEnt)[tgtIndex] = entropy;
-							tiles.get(typeIndexEnt).drawTiles(mean, entropy, tgtIndex, lat, lng);
-						}
 					}
 					
 				}
 			}
 			for(int i=0; i<outputfile.length; i++){
-				if(doneFlag[i]==false && result.imgStr[i] == null){
-//					write geotiff files
-//					Driver driver = gdal.GetDriverByName("GTiff");
-//					Dataset dst_ds = driver.Create(outputfile[i].replace(".png", ".tif"), (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
-//					dst_ds.SetGeoTransform(sParserArr.get(i).getGeoInfo());
-//					dst_ds.SetProjection(sParserArr.get(i).getProjRef());
-//					double[] curBuffer = bufferSet.get(i);
-//					int writingResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, curBuffer);
-//					dst_ds.FlushCache();
-//					dst_ds.delete();
-//					System.out.println("Writing geotiff result is: " + writingResult);	
-					
-//					write png tiles from buffered img
-					result.imgStr[i] = tiles.get(i).writeBufferImage();
-				}
+//				write geotiff files
+				Driver driver = gdal.GetDriverByName("GTiff");
+				Dataset dst_ds = driver.Create(outputfile[i], (int)tgtWidth, (int)tgtHeight, 1, gdalconst.GDT_Float64);
+				dst_ds.SetGeoTransform(sParserArr.get(i).getGeoInfo());
+				dst_ds.SetProjection(sParserArr.get(i).getProjRef());
+				double[] curBuffer = bufferSet.get(i);
+				int writingResult = dst_ds.GetRasterBand(1).WriteRaster(0, 0, (int)tgtWidth, (int)tgtHeight, curBuffer);
+				dst_ds.FlushCache();
+				dst_ds.delete();
+				System.out.println("Writing geotiff result is: " + writingResult);	
 			}
 			return true;
 		}
