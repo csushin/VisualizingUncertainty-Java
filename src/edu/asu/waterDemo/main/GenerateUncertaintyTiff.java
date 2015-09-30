@@ -183,7 +183,6 @@ public class GenerateUncertaintyTiff {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		TiffParser[] parsers = new TiffParser[sPathList.size()];
 		for(int i=0; i<sPathList.size(); i++){
 			sParserArr.add(service[i].getResult());
 		}
@@ -237,7 +236,7 @@ public class GenerateUncertaintyTiff {
 					}
 					statService[w] = new CalcStatThread(uncertaintyType, ratio, popVal, value, tgtIndex, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt);
 					statServerThread[w] = new Thread(statService[w]);
-					statServerThread[w].run();
+					statServerThread[w].start();
 				}
 				try{
 					for(int w=0; w<tgtWidth; w++){
