@@ -9,6 +9,7 @@ import java.util.Collections;
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -18,21 +19,24 @@ import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.commonclasses.TiffParser;
 
+@Path("/MergeGridStat")
 public class StatTree {
 	public class Treedata{
-		int[] data;
+		public double[] statData;
 		public double max;
 		public double min;
 	}
 	
 	public String uncertaintyDir;
+	private int NUMBER_OF_PROCESSORS = 8;
+	
 	
 	@Context
 	public void setServletContext(ServletContext context) {
 		String osName = System.getProperty("os.name");
 		String osNameMatch = osName.toLowerCase();
 		if(osNameMatch.contains("windows")){
-			this.uncertaintyDir = context.getRealPath("img/uncertainty") + File.separatorChar;
+			this.uncertaintyDir = context.getRealPath("img/supply") + File.separatorChar;
 		}
 		else{
 			this.uncertaintyDir = "/work/asu/data/wuncertainty/";
@@ -47,12 +51,10 @@ public class StatTree {
 			@QueryParam("dy") @DefaultValue("1") int dy,
 			@QueryParam("type") @DefaultValue("null") String type,
 			@QueryParam("oldData") @DefaultValue("true") String oldData,
-			@QueryParam("year") @DefaultValue("1960") String year,
-			@QueryParam("demandfName") @DefaultValue("null") String demandfName,
-			@QueryParam("emissionType") @DefaultValue("null") String emission,
-			@QueryParam("scenarioType") @DefaultValue("null") String scenario) throws IOException{
+			@QueryParam("filename") @DefaultValue("null") String filename) throws IOException{
 		Treedata treedata = new Treedata();
-		String path = this.uncertaintyDir + type + "/" + demandfName + "_" + year + "_" + emission + "_" + scenario + oldData + "_" + type+ ".tif"; 
+		String path = this.uncertaintyDir + type + "/" + filename; 
+//		String path = this.uncertaintyDir + filename; 
 		File file = new File(path);
 		
 		if(file.exists()){
@@ -61,40 +63,43 @@ public class StatTree {
 			if(tiffParser.parser()){
 				double width = tiffParser.getxSize();
 				double height = tiffParser.getySize();
-				int totalGridX = (int) (width/dx);
-				int totalGridY = (int) (height/dy);
+				int totalGridX = (int) Math.floor(width/dx);
+				int totalGridY = (int) Math.floor(height/dy);
 				int totalSerials = totalGridX * totalGridY;
-				treedata.data = new int[totalGridX * totalGridY];
-				int[] serialData = new int[totalGridX * totalGridY];
-				int[] serialEffectNum = new int[totalGridX * totalGridY];
+				treedata.statData = new double[totalSerials];
+				double[] serialData = new double[totalSerials];
+				double[] serialEffectNum = new double[totalSerials];
 				if(width == 0 || height == 0)
 					System.out.println("Error in reading sizes!");
-				for(int x=0; x<width; x++){
-					for(int y=0; y<height; y++){
-						int xInd = x/dx;
-						int yInd = y/dy;
-						int totalSerialInd = xInd + yInd * totalGridX;
+				for(int y=0; y<height; y++){
+					for(int x=0; x<width; x++){
 						int origInd = (int) (y * width + x);
 						double origVal = tiffParser.getData()[origInd];
 						if(origVal!=-1){
-							serialData[totalSerialInd]+=origVal;
-							serialEffectNum[totalSerialInd]+=1;
+							double xInd = Math.floor(x/dx);
+							double yInd = Math.floor(y/dy);
+							if(y>=dy*totalGridY)
+								yInd = totalGridY - 1;
+							if(x>=dx*totalGridX)
+								xInd = totalGridX - 1;
+							double totalSerialInd = xInd + yInd * totalGridX;
+							serialData[(int)totalSerialInd]+=origVal;
+							serialEffectNum[(int)totalSerialInd]+=1;
 						}
-							
 					}
 				}
+				System.out.print("Finished division!");
 				double max = 0, min = 999999;
 				for(int i=0; i<totalSerials; i++){
 					if(serialEffectNum[i]!=0)
-						serialData[i] = serialData[i]/(serialEffectNum[i]);
+						treedata.statData[i] = serialData[i]/(serialEffectNum[i]);
 					else
-						serialData[i] = -1;
-					if(max<serialData[i] && serialData[i] != -1)
-						max = serialData[i];
-					if(min>serialData[i] && serialData[i] != -1)
-						min = serialData[i];
+						treedata.statData[i] = -1;
+					if(max<treedata.statData[i] && treedata.statData[i] != -1)
+						max = treedata.statData[i];
+					if(min>treedata.statData[i] && treedata.statData[i] != -1)
+						min = treedata.statData[i];
 				}
-				treedata.data = serialData;
 				treedata.max = max;
 				treedata.min = min;
 				return treedata;

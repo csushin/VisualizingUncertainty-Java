@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -35,8 +36,13 @@ public class GenerateUncertaintyTiff {
 	public String meanVarianceDir;
 	public String meanEntropyDir;
 	public String meanVotingsDir;
+	public String meanMeanDir;
 	
-	private int NUMBER_OF_PROCESSORS = 8;
+	private int NUMBER_OF_PROCESSORS = 30;
+	
+	public class fileNameBean{
+		public HashMap<String, String> filenames;
+	}
 	
 	@Context
 	public void setServletContext(ServletContext context) {
@@ -53,6 +59,7 @@ public class GenerateUncertaintyTiff {
 			meanVarianceDir = context.getRealPath("img/supply") + File.separatorChar;// + "MeanVariance"+ File.separatorChar;
 			meanEntropyDir = context.getRealPath("img/supply") + File.separatorChar;// + "MeanEntropy"+ File.separatorChar;
 			meanVotingsDir = context.getRealPath("img/supply") + File.separatorChar;// + "MeanVotings"+ File.separatorChar;
+			meanMeanDir = context.getRealPath("img/supply") + File.separatorChar;
 		}
 		else{
 			demandDir = "/work/asu/data/wdemand/popden_pred/";
@@ -61,22 +68,24 @@ public class GenerateUncertaintyTiff {
 			disagreeDir = "/work/asu/data/wuncertainty/disagree/";
 			varianceDir = "/work/asu/data/wuncertainty/variance/";
 			entropyDir = "/work/asu/data/wuncertainty/entropy/";
-			meanVarianceDir = "/work/asu/data/wuncertainty/MeanVariance/";
-			meanEntropyDir = "/work/asu/data/wuncertainty/MeanEntropy/";
-			meanVotingsDir = "/work/asu/data/wuncertainty/MeanVotings/";
+			meanVarianceDir = "/work/asu/data/wuncertainty/variance/";
+			meanEntropyDir = "/work/asu/data/wuncertainty/entropy/";
+			meanVotingsDir = "/work/asu/data/wuncertainty/votings/";
+			meanMeanDir = "/work/asu/data/wuncertainty/mean/";
 		}
 	}
 	
 	@GET
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
-	public boolean query(
+	public fileNameBean query(
 			@QueryParam("demandfName") @DefaultValue("null") String demandfName,
 			@QueryParam("emissionType") @DefaultValue("null") String emission,
 			@QueryParam("scenarioType") @DefaultValue("null") String scenario,
 			@QueryParam("uncertaintyType") @DefaultValue("agree") String uncertaintyType,
 			@QueryParam("oldData") @DefaultValue("old") String oldData) throws IOException {
 //		initialize the output dir, path ,and filenames
+		fileNameBean result = new fileNameBean();
 		int jobNum = uncertaintyType.split(",").length;
 		String[] fileName = new String[jobNum];
 		String[] outputfile = new String[jobNum];
@@ -84,7 +93,7 @@ public class GenerateUncertaintyTiff {
 		boolean anynotexist = false;
 		if(uncertaintyType.contains("agree")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_MeanVotings.tif";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_votings.tif";
 			outputfile[index] = this.meanVotingsDir + fileName[index];
 			outputDir[index] = this.meanVotingsDir;
 			File file = new File(fileName[index]);
@@ -93,7 +102,7 @@ public class GenerateUncertaintyTiff {
 		}
 		if(uncertaintyType.contains("variance")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_MeanVariance.tif";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_variance.tif";
 			outputfile[index] = this.meanVarianceDir + fileName[index];
 			outputDir[index] = this.meanVarianceDir;	
 			File file = new File(fileName[index]);
@@ -102,15 +111,30 @@ public class GenerateUncertaintyTiff {
 		}
 		if(uncertaintyType.contains("entropy")){
 			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
-			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_MeanEntropy.tif";
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_entropy.tif";
 			outputfile[index] = this.meanEntropyDir + fileName[index];
 			outputDir[index] = this.meanEntropyDir;
 			File file = new File(fileName[index]);
 			if(!file.exists())
 				anynotexist = true;
 		}
-		if(!anynotexist)
-			return true;
+		if(uncertaintyType.contains("mean")){
+			int index = Arrays.asList(uncertaintyType.split(",")).indexOf("mean");
+			fileName[index] = demandfName.replace(".tif", "") + "_" + emission + "_" + scenario + "_" + oldData +"_mean.tif";
+			outputfile[index] = this.meanMeanDir + fileName[index];
+			outputDir[index] = this.meanMeanDir;
+			File file = new File(fileName[index]);
+			if(!file.exists())
+				anynotexist = true;
+		}
+		if(!anynotexist){
+			result.filenames = new HashMap<String, String>();
+			result.filenames.put("agree", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("agree")]);
+			result.filenames.put("variance", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("variance")]);
+			result.filenames.put("entropy", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("entropy")]);
+			result.filenames.put("mean", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("mean")]);
+			return result;		
+		}
 
 		//		initialize the class GenerateTiles
 		String demandPath = this.demandDir + demandfName;
@@ -119,11 +143,16 @@ public class GenerateUncertaintyTiff {
 //		generate new tiles
 		ArrayList<String> supplyPathList = getAllSupplies(demandPath, this.supplyDir, emission, scenario, uncertaintyType, oldData);
 		if(computeAndsave(demandPath, supplyPathList, outputfile, uncertaintyType, oldData)){
-			return true;		
+			result.filenames = new HashMap<String, String>();
+			result.filenames.put("agree", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("agree")]);
+			result.filenames.put("variance", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("variance")]);
+			result.filenames.put("entropy", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("entropy")]);
+			result.filenames.put("mean", fileName[Arrays.asList(uncertaintyType.split(",")).indexOf("mean")]);
+			return result;		
 		}
 		else{
 			System.out.println("Can't create geotiff image!");	
-			return false;
+			return null;
 		}			
 	}
 
@@ -191,19 +220,6 @@ public class GenerateUncertaintyTiff {
 		System.out.println("Program Ends!");
 		sSize = sParserArr.get(0).getSize();
 		System.out.println("Supply Size is:" + sSize[0] + " , " + sSize[1]);
-//		for(int i=0; i<sPathList.size(); i++){
-//			String curSupplyPath = sPathList.get(i);
-//			TiffParser sParser = new TiffParser();
-//			sParser.setFilePath(curSupplyPath);
-//			if(sParser.parser()){
-//				sParserArr.add(sParser);
-//				sSize = sParser.getSize();
-//			}
-//			else {
-//				System.out.println("Error in parsing supply files!");
-//				return false;
-//			}
-//		}
 		ArrayList<double[]> bufferSet = new ArrayList<double[]>();
 		if(dParser.parser() && !sParserArr.isEmpty()){
 			int tgtHeight = (int)sSize[0];
@@ -218,14 +234,13 @@ public class GenerateUncertaintyTiff {
 			int typeIndexAgree = Arrays.asList(uncertaintyType.split(",")).indexOf("agree");
 			int typeIndexVar = Arrays.asList(uncertaintyType.split(",")).indexOf("variance");
 			int typeIndexEnt = Arrays.asList(uncertaintyType.split(",")).indexOf("entropy");
-			double[] entropy = new double[tgtHeight*tgtWidth];
-			double[] variance = new double[tgtHeight*tgtWidth];
-			double[] votings = new double[tgtHeight*tgtWidth];
-			bufferSet.add(votings);
-			bufferSet.add(entropy);
-			bufferSet.add(variance);
+			int typeIndexMean = Arrays.asList(uncertaintyType.split(",")).indexOf("mean");
+			bufferSet.add(new double[tgtHeight*tgtWidth]);
+			bufferSet.add(new double[tgtHeight*tgtWidth]);
+			bufferSet.add(new double[tgtHeight*tgtWidth]);
+			bufferSet.add(new double[tgtHeight*tgtWidth]);
 			double ratio = 1/1000.0;
-			System.out.println("Ratio is:" + ratio);
+//			System.out.println("Ratio is:" + ratio);
 			CalcStatThread[] statService = new CalcStatThread[NUMBER_OF_PROCESSORS];
 			Thread[] statServerThread = new Thread[NUMBER_OF_PROCESSORS];
 			int delta = tgtHeight/NUMBER_OF_PROCESSORS;
@@ -234,7 +249,7 @@ public class GenerateUncertaintyTiff {
 				int h2 = (i+1) * delta;
 				int startIndex = h1 * tgtWidth;
 				int endIndex =  h2 * tgtWidth;
-				statService[i] = new CalcStatThread(uncertaintyType, ratio, dParser.getData(), sParserArr, startIndex, endIndex, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt);
+				statService[i] = new CalcStatThread(uncertaintyType, ratio, dParser.getData(), sParserArr,  h1, h2, deltaX, deltaY, tgtWidth, bufferSet, typeIndexAgree, typeIndexVar, typeIndexEnt, typeIndexMean);
 				statServerThread[i] = new Thread(statService[i]);
 				statServerThread[i].start();
 			}
@@ -248,57 +263,6 @@ public class GenerateUncertaintyTiff {
 				e.printStackTrace();
 			}
 			System.out.println(" Finished~");
-//				System.out.println("Start Processing " + h);
-//				for(int h=0; h<tgtHeight; h++){
-//				for(int w=0; w<tgtWidth; w++){
-//					int tgtIndex = h*tgtWidth+w;
-//					int popIndex = (h+deltaY)*(tgtWidth+deltaX) + (w+deltaX);
-//					double popVal = dParser.getData()[popIndex];
-//					ArrayList<Integer> supplyValArr = new ArrayList<Integer>();
-//					int sum = 0;
-//					boolean nullFlag = false;
-//					int nonNANCount  = 0;
-//					for(int k=0; k<sParserArr.size(); k++){
-//						double scarVal = 0;
-//						double curSupplyVal = sParserArr.get(k).getData()[tgtIndex];
-//						if(!Double.isNaN(popVal) && !Double.isNaN(curSupplyVal)){
-//							if(popVal>=1 && curSupplyVal>=0){
-//								scarVal = curSupplyVal/(popVal*ratio);
-//							}
-//							else if(popVal<1 && curSupplyVal>=0){
-//								scarVal = 1701;
-//							}		
-//						}
-//						else{
-//							scarVal = -1;
-//						}
-//						
-////						set the values of the scarcity by using 0/1/2/3 to represent AbScar/Scar/Stre/NoStre
-//						int flag;
-//						if(scarVal<=500 && scarVal>=0) {flag = 1;sum+=flag;nonNANCount++;}
-//						else if(scarVal>500 && scarVal<=1000) {flag = 2;sum+=flag;nonNANCount++;}
-//						else if(scarVal>1000 && scarVal<=1700) {flag = 3;sum+=flag;nonNANCount++;}
-//						else if(scarVal>1700)	{flag = 4;sum+=flag;nonNANCount++;}
-//						else {flag = -1; nullFlag=true;}//here we need to also consider the situation that water supply is NaN as it comes from the water model
-//						supplyValArr.add(flag);
-//					}
-//					
-//					double mean = calcMean(nullFlag, sum, nonNANCount);//(double) (sum/(double)supplyValArr.size());
-//					if(uncertaintyType.contains("agree")){
-//							double votings = calcVotings(nullFlag, mean, supplyValArr, nonNANCount);
-//							bufferSet.get(typeIndexAgree)[tgtIndex] = votings;
-//					}
-//					if(uncertaintyType.contains("variance")){
-//							double variance = calcVariance(nullFlag, sum, supplyValArr, nonNANCount);
-//							bufferSet.get(typeIndexVar)[tgtIndex] = variance;
-//					}
-//					if(uncertaintyType.contains("entropy")){
-//							double entropy = calcEntropy(nullFlag, sum, supplyValArr, nonNANCount);
-//							bufferSet.get(typeIndexEnt)[tgtIndex] = entropy;
-//					}
-//					
-//				}
-//			}
 			for(int i=0; i<outputfile.length; i++){
 //				write geotiff files
 				Driver driver = gdal.GetDriverByName("GTiff");
