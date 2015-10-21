@@ -1,5 +1,6 @@
 package edu.asu.waterDemo.commonclasses;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -8,6 +9,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -15,7 +19,18 @@ import javax.imageio.ImageIO;
 
 
 
+
+
+
+
+
+
+
+
+
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.StringUtils;
+import org.json.simple.JSONObject;
 
 import com.google.common.primitives.Ints;
 
@@ -34,6 +49,8 @@ public class GenerateTiles {
 	private Point pixelSW;
 	private Point pixelNE;
 	private String type;
+
+
 	private int zoomLevel;
 	public static int INFINITE = -99999;
 
@@ -71,8 +88,11 @@ public class GenerateTiles {
 				(int) this.getTileWidth(), (int) this.getTileHeight(), BufferedImage.TYPE_INT_ARGB );
 		File f = new File(this.getOutputPath());
 		this.setImg(img);
-		this.setfObject(f);
+		if(!this.getType().equals("treeVis"))
+			this.setfObject(f);
 	}
+	
+
 	
 	public String writeBufferImage(){
 		try{
@@ -88,6 +108,7 @@ public class GenerateTiles {
 		}
 	}
 	
+	
 	public String encodeFromReaderToBase64(String path, String type){
 		BufferedImage img = null;
 		try {
@@ -101,7 +122,24 @@ public class GenerateTiles {
 		
 	}
 	
-	public String encodeFromBufferImgToBase64(BufferedImage image, String type){
+//	public interface
+	public String encodeFromBufferImgToBase64(){
+		String imageString = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(this.getImg(), this.getType(), bos);
+            byte[] imageBytes = bos.toByteArray();
+            BASE64Encoder encoder = new BASE64Encoder();
+            imageString = encoder.encode(imageBytes);
+            bos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return imageString;		
+	}
+	
+//	private interface for other functions
+	private String encodeFromBufferImgToBase64(BufferedImage image, String type){
         String imageString = null;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
@@ -123,6 +161,20 @@ public class GenerateTiles {
 		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
 		int alpha = this.indexAlpha(stat, mean);
 		int[] rgb = this.indexRGB(mean);
+		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
+//		System.out.println("wImg: " + wImg + " hImg: " + hImg);
+		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
+			this.getImg().setRGB(wImg, hImg, color);
+		
+	}
+	
+	public void drawTiles(double[] values, double[] thresholds, JSONObject tfFunction, HashMap<String, Color> selectedNodes, double lat, double lng) throws IOException{
+		LatLng latLng = new LatLng(lat, lng);
+		Point2D pt = this.latLngToLayerPoint(latLng);
+		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
+		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
+		int alpha = 255;
+		int[] rgb = this.indexRGB(values, thresholds, tfFunction, selectedNodes);
 		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
 //		System.out.println("wImg: " + wImg + " hImg: " + hImg);
 		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
@@ -168,12 +220,16 @@ public class GenerateTiles {
 			else
 				result = 255;
 		}
+		else if(this.getType().equals("treeVis")){
+			result = 255;
+		}
 		else{
 			System.out.println("Cannot recognize the input type in mapping alpha value during the generation of tiles!");
 		}
 		
 		return result;
 	}
+	
 	
 //	return the value from 0~255 in the order of r/g/b
 	private int[] indexRGB(double val){
@@ -210,6 +266,41 @@ public class GenerateTiles {
 			result[2] = Integer.valueOf(color.split(",")[2]);
 			return result;			
 		}
+	}
+	
+	private int[] indexRGB(double[] val, double[] thresholds, JSONObject tfFunction, HashMap<String, Color> selectedNodes){
+		int[] result = new int[3];
+		String encodedVal = "";
+		for(int i=0; i<thresholds.length; i++){
+			encodedVal.concat(val[i]>thresholds[i]?"0":"1");
+			if(selectedNodes.containsKey(encodedVal)){
+				Color mapping = selectedNodes.get(encodedVal);
+				result[0] = mapping.getRed();
+				result[1] = mapping.getGreen();
+				result[2] = mapping.getBlue();
+				return result;
+			}
+			else{
+				Color mapping = parse((String)tfFunction.get(encodedVal));
+				result[0] = mapping.getRed();
+				result[1] = mapping.getGreen();
+				result[2] = mapping.getBlue();
+			}
+		}
+		return result;
+	}
+	
+	public static Color parse(String input) 
+	{
+	    Pattern c = Pattern.compile("rgb *\\( *([0-9]+), *([0-9]+), *([0-9]+) *\\)");
+	    Matcher m = c.matcher(input);
+	    if (m.matches()) 
+	    {
+	        return new Color(Integer.valueOf(m.group(1)),  // r
+	                         Integer.valueOf(m.group(2)),  // g
+	                         Integer.valueOf(m.group(3))); // b 
+	    }
+	    return null;  
 	}
 	
 	private Point latLngToLayerPoint(LatLng latlng){
