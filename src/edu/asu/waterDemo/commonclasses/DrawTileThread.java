@@ -32,11 +32,11 @@ public class DrawTileThread implements Runnable{
 	public void run() {
 		for(int i=startIndex; i<endIndex; i++){
 			int h = i/(int)this.parsers.get(0).getSize()[1];
-			int w = (int) (i - h*this.parsers.get(0).getSize()[1]-1);
+			int w = i%(int)this.parsers.get(0).getSize()[1];
 			double lat = this.parsers.get(0).getUlLatlng()[0] + h*this.parsers.get(0).getGeoInfo()[5];
 			double lng = this.parsers.get(0).getUlLatlng()[1] + w*this.parsers.get(0).getGeoInfo()[1];
 			double[] values = new double[this.parsers.size()];
-			for(int index = 0; index<this.parsers.size(); i++){
+			for(int index = 0; index<this.parsers.size(); index++){
 				values[index] = this.parsers.get(index).getData()[i];
 			}
 			try {

@@ -16,6 +16,7 @@ public class TiffParser {
 	private double[] data;
 	private double[] size;
 	
+
 	private String filePath;
 	public int xoff, yoff, xSize, ySize;
 	private double[] geoInfo;
@@ -84,7 +85,7 @@ public class TiffParser {
 
 	public boolean parser(){
 		boolean opened = false;
-		String fileName_tif = filePath;  
+		String fileName_tif = this.filePath;  
 		gdal.AllRegister();
 		Dataset hDataset = gdal.Open(fileName_tif, gdalconstConstants.GA_ReadOnly);
 		if (hDataset == null)
@@ -106,10 +107,7 @@ public class TiffParser {
 			double[] pixelData = new double[this.xSize * this.ySize];
 			int err = hBand.ReadRaster(0, 0, this.xSize, this.ySize, gdalconst.GDT_Float64, pixelData);
 			if(err==gdalconst.CE_Failure)
-			{
-				System.out.println("Getting Data Error! An Error occured in getting pixel value in Dissolved One!");
-			}				
-
+				System.out.println("Getting Data Error! An Error occured in getting pixel value in Dissolved One!");				
 //			System.out.println("Driver: " + hDriver.getShortName() + "/"
 //					+ hDriver.getLongName());
 //
@@ -127,7 +125,6 @@ public class TiffParser {
 
 			// get statistical information about tiff
 			double[] dfMinMax = new double[2];
-			hBand.ComputeRasterMinMax(dfMinMax);
 			double[] dfMax = new double[1];
 			double[] dfMean = new double[1];
 			double[] dfstddev = new double[1];
@@ -175,6 +172,20 @@ public class TiffParser {
 			this.data = pixelData;
 			opened = true;
 			return opened;
+	}
+	
+	public void GetMinMax(double[] minmax){
+		minmax[0] = 99999999;
+		minmax[1] = 0;
+		for(int i=0; i<this.size[0]*this.size[1]; i++){
+			double value = this.getData()[i];
+			if(value!=-1 && !Double.isNaN(value)){
+				if(value<minmax[0])
+					minmax[0] = this.getData()[i];
+				if(value>minmax[1])
+					minmax[1] = this.getData()[i];				
+			}
+		}		
 	}
 	
 	public double[] getSize() {

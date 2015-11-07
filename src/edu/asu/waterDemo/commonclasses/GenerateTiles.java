@@ -28,8 +28,10 @@ import javax.imageio.ImageIO;
 
 
 
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.json.simple.JSONObject;
 
 import com.google.common.primitives.Ints;
@@ -88,8 +90,7 @@ public class GenerateTiles {
 				(int) this.getTileWidth(), (int) this.getTileHeight(), BufferedImage.TYPE_INT_ARGB );
 		File f = new File(this.getOutputPath());
 		this.setImg(img);
-		if(!this.getType().equals("treeVis"))
-			this.setfObject(f);
+		this.setfObject(f);
 	}
 	
 
@@ -127,7 +128,7 @@ public class GenerateTiles {
 		String imageString = null;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
-            ImageIO.write(this.getImg(), this.getType(), bos);
+            ImageIO.write(this.getImg(), "PNG", bos);
             byte[] imageBytes = bos.toByteArray();
             BASE64Encoder encoder = new BASE64Encoder();
             imageString = encoder.encode(imageBytes);
@@ -173,7 +174,7 @@ public class GenerateTiles {
 		Point2D pt = this.latLngToLayerPoint(latLng);
 		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
 		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
-		int alpha = 255;
+		int alpha = this.indexAlpha(values);
 		int[] rgb = this.indexRGB(values, thresholds, tfFunction, selectedNodes);
 		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
 //		System.out.println("wImg: " + wImg + " hImg: " + hImg);
@@ -182,10 +183,32 @@ public class GenerateTiles {
 		
 	}
 	
+	public void drawTiles(double value, double[] thresholds, String[] tfFunction, double lat, double lng) throws IOException{
+		LatLng latLng = new LatLng(lat, lng);
+		Point2D pt = this.latLngToLayerPoint(latLng);
+		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
+		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
+		int alpha = this.indexAlpha(value,0);
+		int[] rgb = this.indexRGB(value, thresholds, tfFunction);
+		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
+//		System.out.println("wImg: " + wImg + " hImg: " + hImg);
+		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
+			this.getImg().setRGB(wImg, hImg, color);
+		
+	}
+	
+	private int indexAlpha(double[] values){
+		for(double each : values){
+			if(each == -1 || Double.isNaN(each))
+				return 0;
+		}
+		return 200;
+	}
+	
 //	return the value from 0~255
 	private int indexAlpha(double val, double meanVal){
 //		set the full transparency for those NaN Values
-		if(val == -1 || meanVal == -1 || meanVal == INFINITE)
+		if(val == -1 || Double.isNaN(val) || meanVal == -1 || meanVal == INFINITE)
 			return 0;
 		int result = 0;
 		double min=0, max=0;
@@ -220,7 +243,7 @@ public class GenerateTiles {
 			else
 				result = 255;
 		}
-		else if(this.getType().equals("treeVis")){
+		else if(this.getType().equals("treeVis") || this.getType().equals("fuzzyThresholdVis") || this.getType().equals("overviewVis")){
 			result = 255;
 		}
 		else{
@@ -271,22 +294,58 @@ public class GenerateTiles {
 	private int[] indexRGB(double[] val, double[] thresholds, JSONObject tfFunction, HashMap<String, Color> selectedNodes){
 		int[] result = new int[3];
 		String encodedVal = "";
-		for(int i=0; i<thresholds.length; i++){
-			encodedVal.concat(val[i]>thresholds[i]?"0":"1");
-			if(selectedNodes.containsKey(encodedVal)){
-				Color mapping = selectedNodes.get(encodedVal);
-				result[0] = mapping.getRed();
-				result[1] = mapping.getGreen();
-				result[2] = mapping.getBlue();
+		for(double each : val){
+			if(Double.isNaN(each)){
+				result[0] = 255; result[1]=255; result[2]=255;
 				return result;
 			}
-			else{
-				Color mapping = parse((String)tfFunction.get(encodedVal));
-				result[0] = mapping.getRed();
-				result[1] = mapping.getGreen();
-				result[2] = mapping.getBlue();
+				
+		}
+//		i=0 is the root node
+		if(!ArrayUtils.contains(val, -1 )){
+			for(int i=1; i<thresholds.length; i++){
+				encodedVal+=(val[i-1]>thresholds[i]?"1":"0");
+//				if(val[i-1]>thresholds[i] && val[i-1]>2.0)
+//					System.out.println(val[i-1]);
+				if(selectedNodes.containsKey(encodedVal)){
+					Color mapping = selectedNodes.get(encodedVal);
+					result[0] = mapping.getRed();
+					result[1] = mapping.getGreen();
+					result[2] = mapping.getBlue();
+					return result;
+				}
+				else{
+					Color mapping = parse((String)tfFunction.get(encodedVal));
+					result[0] = mapping.getRed();
+					result[1] = mapping.getGreen();
+					result[2] = mapping.getBlue();
+				}				
 			}
 		}
+		return result;
+	}
+	
+	private int[] indexRGB(double val, double[] thresholds, String[] tfFunction){
+		int[] result = new int[3];
+		Color color = null;
+		if(val==-1 || Double.isNaN(val)){
+			result[0] = 255; result[1]=255; result[2]=255;
+			return result;
+		}
+		if(val<thresholds[0])
+			color = parse(tfFunction[0]);
+		for(int i=thresholds.length-1; i>=0; i--){
+			if(val>=thresholds[i]){
+				int j = i+1;
+				color = parse(tfFunction[j]);
+				break;
+			}
+		}
+		if(color == null)
+			System.out.println("Value is " + val);
+		result[0] = color.getRed();
+		result[1] = color.getGreen();
+		result[2] = color.getBlue();
 		return result;
 	}
 	

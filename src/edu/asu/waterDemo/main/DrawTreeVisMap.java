@@ -51,8 +51,9 @@ public class DrawTreeVisMap {
 		String osName = System.getProperty("os.name");
 		String osNameMatch = osName.toLowerCase();
 		if(osNameMatch.contains("windows")) {
+			this.preCalcDir = context.getRealPath("img") + File.separatorChar;
 		}else{
-			this.preCalcDir = context.getRealPath("/work/asu/data/CalculationResults") + File.separatorChar;
+			this.preCalcDir = "/work/asu/data/CalculationResults" + File.separatorChar;
 		}
 	}
 	
@@ -65,8 +66,9 @@ public class DrawTreeVisMap {
 			@QueryParam("thresholds") @DefaultValue("") String thresholds,
 			@QueryParam("mapPixelOrigin") @DefaultValue("0,0") String mapPixelOrigin,
 			@QueryParam("zoomLevel") @DefaultValue("7") int zoomLevel,
-			@QueryParam("year") @DefaultValue("") String year,
-			@QueryParam("modal") @DefaultValue("") String modal) throws ParseException {
+			@QueryParam("treeTypeKeyword") @DefaultValue("") String treeTypeKeyword,
+			@QueryParam("modal") @DefaultValue("") String modal,
+			@QueryParam("dataType") @DefaultValue("") String dataType) throws ParseException {
 //		note that the order of the threshold and levels should be the consistent
 		imgBase64 result = new imgBase64();
 		result.imgStr = "test";		
@@ -74,8 +76,10 @@ public class DrawTreeVisMap {
 		String[] levelsArr = levels.split(",");
 		String[] _thresholdsArr = thresholds.split(",");
 		double[] thresholdsArr = new double[_thresholdsArr.length];
-		for (int i = 0; i<_thresholdsArr.length; i++) 
+		for (int i = 1; i<_thresholdsArr.length; i++) {
 			thresholdsArr[i] = Double.valueOf(_thresholdsArr[i]);
+		}
+			
 		HashMap<String, Color> selectedNodes = new HashMap<String, Color>();
 		Iterator each = tfFuncJson.keySet().iterator();
 		while(each.hasNext()){
@@ -87,9 +91,9 @@ public class DrawTreeVisMap {
 		}
 		ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
 		
-		for(int i=0; i<levelsArr.length; i++){
-			String dir = this.preCalcDir + levelsArr[i].replace(" ", "") + File.separatorChar;
-			String filePath = getAllFiles(dir, year);
+		for(int i=1; i<levelsArr.length; i++){
+			String dir = this.preCalcDir + dataType + "/" + levelsArr[i].replace(" ", "") + File.separatorChar;
+			String filePath = getAllFiles(dir, treeTypeKeyword);
 			parsers.add(new TiffParser(filePath));
 		}
 		if(parsers.isEmpty()){
