@@ -1,6 +1,10 @@
 package edu.asu.waterDemo.main;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.servlet.ServletContext;
@@ -50,7 +54,7 @@ public class GetHistDataForOverview {
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("type") @DefaultValue("null") String type,
 			@QueryParam("key") @DefaultValue("null") String key,
-			@QueryParam("binSize") @DefaultValue("") String binSize){
+			@QueryParam("binSize") @DefaultValue("") String binSize) throws IOException{
 		HistDataBean result = new HistDataBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
@@ -58,6 +62,39 @@ public class GetHistDataForOverview {
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
 		this.metricDir = this.basisDir + _dataType + "/" + type + metricType + File.separatorChar;
+		if(metricType.contains("Area")){
+			this.targetFile = getAllFilesForArea(this.metricDir, key);
+			BufferedReader br = new BufferedReader(new FileReader(this.targetFile));
+			try {
+			    StringBuilder sb = new StringBuilder();
+			    String line = br.readLine();
+
+			    while (line != null) {
+			        sb.append(line);
+			        sb.append(System.lineSeparator());
+			        line = br.readLine();
+			    }
+			    String[] everything = sb.toString().split(" ");
+			    double[] hist = new double[everything.length];
+			    double min = 99999999;
+			    double max = 0;
+			    for(int i=0; i<everything.length; i++){
+			    	hist[i] = Double.valueOf(everything[i]);
+			    	if(max<Double.valueOf(everything[i]))
+			    		max = Double.valueOf(everything[i]);
+			    	if(min>Double.valueOf(everything[i]))
+			    		min = Double.valueOf(everything[i]);
+			    }
+			    result.hist = hist;
+				result.metric = metricType;
+				result.data = dataType;
+				result.min = min;
+				result.max = max;
+			} finally {
+			    br.close();
+			}
+			return result;
+		}
 		this.targetFile = getAllFiles(this.metricDir, key);
 		TiffParser targetparser = new TiffParser(this.targetFile);
 		double[] MinMax = new double[2];
@@ -111,6 +148,19 @@ public class GetHistDataForOverview {
 	    File[] fList = directory.listFiles();
 	    for (File file : fList) {
 	        if (file.isFile() && file.getName().endsWith(".tif") && file.getName().contains(keyword)) {
+	        	return file.getAbsolutePath();
+	        } 
+	    }
+	    return null;
+	}
+	
+	private String getAllFilesForArea(String directoryName, String keyword) {
+	    File directory = new File(directoryName);
+
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    for (File file : fList) {
+	        if (file.isFile() && file.getName().endsWith(".txt") && file.getName().contains(keyword)) {
 	        	return file.getAbsolutePath();
 	        } 
 	    }
