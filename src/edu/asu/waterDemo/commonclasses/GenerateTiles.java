@@ -274,7 +274,7 @@ public class GenerateTiles {
 			return result;
 		}
 		else{
-			if(val == -1){
+			if(val == -1 || Double.isNaN(val)){
 				int[] result = {255,255,255};
 				return result;
 			}

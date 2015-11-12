@@ -75,7 +75,7 @@ public class StatTree {
 					for(int x=0; x<width; x++){
 						int origInd = (int) (y * width + x);
 						double origVal = tiffParser.getData()[origInd];
-						if(origVal!=-1){
+						if(origVal!=-1 && !Double.isNaN(origVal)){
 							double xInd = Math.floor(x/dx);
 							double yInd = Math.floor(y/dy);
 							if(y>=dy*totalGridY)
@@ -94,10 +94,10 @@ public class StatTree {
 					if(serialEffectNum[i]!=0)
 						treedata.statData[i] = serialData[i]/(serialEffectNum[i]);
 					else
-						treedata.statData[i] = -1;
-					if(max<treedata.statData[i] && treedata.statData[i] != -1)
+						treedata.statData[i] = Double.NaN;;
+					if(max<treedata.statData[i] && !Double.isNaN(treedata.statData[i]))
 						max = treedata.statData[i];
-					if(min>treedata.statData[i] && treedata.statData[i] != -1)
+					if(min>treedata.statData[i] && !Double.isNaN(treedata.statData[i]))
 						min = treedata.statData[i];
 				}
 				treedata.max = max;

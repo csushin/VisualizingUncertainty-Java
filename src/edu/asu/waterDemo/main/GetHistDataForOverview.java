@@ -97,8 +97,7 @@ public class GetHistDataForOverview {
 		}
 		this.targetFile = getAllFiles(this.metricDir, key);
 		TiffParser targetparser = new TiffParser(this.targetFile);
-		double[] MinMax = new double[2];
-		targetparser.GetMinMax(MinMax);
+		double[] MinMax = targetparser.getMinmax();
 		double[] histData = new double[Integer.valueOf(binSize)];
 		
 		double[] sSize = targetparser.getSize();

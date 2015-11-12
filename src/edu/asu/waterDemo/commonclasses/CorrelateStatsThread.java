@@ -35,7 +35,7 @@ public class CorrelateStatsThread implements Runnable{
 		for(int index=startIndex; index<endIndex; index++){
 			double originXVal = xParser.getData()[index];
 			double originYVal = yParser.getData()[index];
-			if(originXVal!=-1 && originYVal!=-1){
+			if(originXVal!=-1 && originYVal!=-1 && !Double.isNaN(originYVal) && !Double.isNaN(originXVal)){
 				int xValue = (int) Math.floor(this.width*(originXVal-xMinMax[0])/(xMinMax[1]-xMinMax[0]));
 				int yValue = (int) Math.floor(this.height*(originYVal-yMinMax[0])/(yMinMax[1]-yMinMax[0]));
 				int offset = yValue*this.width + xValue;

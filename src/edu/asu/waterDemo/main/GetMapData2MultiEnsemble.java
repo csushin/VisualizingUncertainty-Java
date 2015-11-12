@@ -17,14 +17,14 @@ import org.glassfish.jersey.server.JSONP;
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
 import edu.asu.waterDemo.commonclasses.LatLng;
 import edu.asu.waterDemo.commonclasses.TiffParser;
-import edu.asu.waterDemo.main.DrawFuzzyThresholdsMap.DrawFuzzyThreads;
 
-@Path("/getMapData")
-public class GetMapForOverview {
+@Path("/getMapData2MultiEnsemble")
+public class GetMapData2MultiEnsemble {
 	private String basisDir;
 	private String targetPath;
 	private int NUMBER_OF_PROCESSORS = 30;
-	private String metricDir;
+	private String xmetricDir;
+	private String ymetricDir;
 	
 	public class GetMapForOverviewBean{
 		public String imgStr;
@@ -45,15 +45,17 @@ public class GetMapForOverview {
 		private int startIndex;
 		private int endIndex;
 		private TiffParser parser;
-		private double[] thresholds;
+		private double[] xthresholds;
+		private double[] ythresholds;
 		private String[] tfFunction;
 		private GenerateTiles tile;
 		
-		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser Parser, double[] thresholds, String[] tfFucntion, GenerateTiles tile){
+		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser Parser, double[] xthresholds, double[] ythresholds, String[] tfFucntion, GenerateTiles tile){
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.parser = Parser;
-			this.thresholds = thresholds;
+			this.xthresholds = xthresholds;
+			this.ythresholds = ythresholds;
 			this.tfFunction = tfFucntion;
 			this.tile = tile;
 		}
@@ -81,15 +83,14 @@ public class GetMapForOverview {
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
 	public GetMapForOverviewBean query(
-			@QueryParam("metricType") @DefaultValue("null") String metricType,
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
-			@QueryParam("modalType") @DefaultValue("null") String modalType,
-			@QueryParam("key") @DefaultValue("null") String key,
 			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable,
-			@QueryParam("thresholds") @DefaultValue("null") String thresholds,
-			@QueryParam("min") @DefaultValue("null") String min,
-			@QueryParam("max") @DefaultValue("null") String max,
+			@QueryParam("xthresholds") @DefaultValue("null") String xthresholds,
+			@QueryParam("ythresholds") @DefaultValue("null") String ythresholds,
+			@QueryParam("xmetric") @DefaultValue("null") String xmetric,
+			@QueryParam("ymetricA") @DefaultValue("null") String ymetricA,
+			@QueryParam("ymetricB") @DefaultValue("null") String ymetricB,
 			@QueryParam("tfType") @DefaultValue("null") String tfType){
 		GetMapForOverviewBean result = new GetMapForOverviewBean();
 		String _dataType = dataType;
@@ -97,18 +98,19 @@ public class GetMapForOverview {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
-		this.metricDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
-		this.targetPath = getAllFiles(this.metricDir, key);
+		this.xmetricDir = this.basisDir + _dataType + "/GlobleStat/" + xmetric + ".tif";
+		this.ymetricDir = this.basisDir + _dataType + "/EnsembleStatOf" + ymetricB + "/" + ymetricA + "Of" + ymetricB + ".tif";
+		this.targetPath = this.basisDir + _dataType + "/Ensemble2Models/" + xmetric + "_" + ymetricA + "Of" + ymetricB + "_zoomLevel" + zoomLevel + ".tif";
 		String imgPath = this.targetPath.replace(".tif", "_zoomLevel"+ zoomLevel +".png");
 		
-		
-		TiffParser targetparser = new TiffParser(this.targetPath);
+		TiffParser xparser = new TiffParser(this.xmetricDir);
+		TiffParser yparser = new TiffParser(this.ymetricDir);
 		String[] colortf = colorTable.split("&");
 		
 		GenerateTiles tile = new GenerateTiles(imgPath, null, "overviewVis", Integer.valueOf(zoomLevel), colortf);
-		double[] size = targetparser.getSize();
-		LatLng southwest = new LatLng(targetparser.getLrLatlng()[0], targetparser.getUlLatlng()[1]);
-		LatLng northeast = new LatLng(targetparser.getUlLatlng()[0], targetparser.getLrLatlng()[1]);
+		double[] size = xparser.getSize();
+		LatLng southwest = new LatLng(xparser.getLrLatlng()[0], xparser.getUlLatlng()[1]);
+		LatLng northeast = new LatLng(xparser.getUlLatlng()[0], xparser.getLrLatlng()[1]);
 		tile.processWidthHeight((int) size[1], (int) size[0], southwest, northeast);
 		tile.initializeBufferImage();
 		File imgFile = new File(imgPath);
@@ -119,28 +121,11 @@ public class GetMapForOverview {
 			return result;
 		}
 		
-		double[] globalMinmax = new double[2];
-		ArrayList<File> files = new ArrayList<File>();
-		files = getAllFiles(this.metricDir, files);
-		for(File each : files){
-			String filepath = each.getAbsolutePath();
-			TiffParser eachparser = new TiffParser(filepath);
-			double[] minmax = eachparser.getMinmax();
-			if(globalMinmax[0] > minmax[0])
-				globalMinmax[0] = minmax[0];
-			if(globalMinmax[1] < minmax[1])
-				globalMinmax[1] = minmax[1];
-		}
+		double[] xMinmax = xparser.getMinmax();
+		double[] yMinmax = yparser.getMinmax();
 		
-		
-		double[] _thresholds = new double[colortf.length-1];
-		for(int i=0; i<colortf.length-1; i++){
-			_thresholds[i] = (i+1)/(double)colortf.length*(globalMinmax[1]-globalMinmax[0])+globalMinmax[0];
-		}	
-		
-		double[] sSize = targetparser.getSize();
-		int tgtHeight = (int)sSize[0];
-		int tgtWidth = (int)sSize[1];
+		int tgtHeight = (int)size[0];
+		int tgtWidth = (int)size[1];
 		DrawOverviewMapThreads[] drawOverviewMapService = new DrawOverviewMapThreads[NUMBER_OF_PROCESSORS];
 		Thread[]  drawOverviewMapThread = new Thread[NUMBER_OF_PROCESSORS];
 		int delta = tgtHeight/NUMBER_OF_PROCESSORS;
@@ -149,7 +134,7 @@ public class GetMapForOverview {
 			int h2 = (i+1) * delta;
 			int startIndex = h1 * tgtWidth;
 			int endIndex =  h2 * tgtWidth;
-			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, targetparser, _thresholds, colortf, tile);
+			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, xthreshold, ythreshold, colortf, tile);
 			drawOverviewMapThread[i] = new Thread(drawOverviewMapService[i]);
 			drawOverviewMapThread[i].start();
 		}
@@ -163,38 +148,6 @@ public class GetMapForOverview {
 			e.printStackTrace();
 		}
 		
-		result.imgStr = tile.writeBufferImage();
-		
 		return result;
-	}
-	
-	public ArrayList<File> getAllFiles(String directoryName, ArrayList<File> files) {
-	    File directory = new File(directoryName);
-
-	    // get all the files from a directory
-	    File[] fList = directory.listFiles();
-	    for (File file : fList) {
-	    	String name = file.getName();
-	        if (file.isFile() && name.endsWith(".tif") && !name.contains("MPI-ESM-LR_CCLM") && !name.contains("HadGEM2-ES_CCLM") && !name.contains("EC-EARTH-r12_CCLM")
-					&& !name.contains("CNRM-CM5_CCLM") && !name.contains("EC-EARTH-r3_HIRHAM")) {
-	            files.add(file);
-	        } else if (file.isDirectory()) {
-	        	getAllFiles(file.getAbsolutePath(), files);
-	        }
-	    }
-	    return files;
-	}
-	
-	private String getAllFiles(String directoryName, String keyword) {
-	    File directory = new File(directoryName);
-
-	    // get all the files from a directory
-	    File[] fList = directory.listFiles();
-	    for (File file : fList) {
-	        if (file.isFile() && file.getName().endsWith(".tif") && file.getName().contains(keyword)) {
-	        	return file.getAbsolutePath();
-	        } 
-	    }
-	    return null;
 	}
 }
