@@ -92,8 +92,7 @@ public class GetMapData2MultiEnsemble {
 			@QueryParam("ythresholds") @DefaultValue("null") String ythresholds,
 			@QueryParam("xmetric") @DefaultValue("null") String xmetric,
 			@QueryParam("ymetricA") @DefaultValue("null") String ymetricA,
-			@QueryParam("ymetricB") @DefaultValue("null") String ymetricB,
-			@QueryParam("tfType") @DefaultValue("null") String tfType){
+			@QueryParam("ymetricB") @DefaultValue("null") String ymetricB){
 		GetMapForOverviewBean result = new GetMapForOverviewBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
