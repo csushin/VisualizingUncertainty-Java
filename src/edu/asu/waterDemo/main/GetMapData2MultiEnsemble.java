@@ -52,8 +52,9 @@ public class GetMapData2MultiEnsemble {
 		private double[] xMinmax;
 		private double[] yMinmax;
 		private GenerateTiles tile;
+		private TiffParser comparedXParser;
 		
-		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser xParser, TiffParser yParser, double[] xthresholds, double[] ythresholds, double[] xMinmax, double[] yMinmax, String[] tfFucntion, GenerateTiles tile){
+		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser xParser, TiffParser yParser, double[] xthresholds, double[] ythresholds, double[] xMinmax, double[] yMinmax, String[] tfFucntion, GenerateTiles tile, TiffParser comparedXParser){
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.xparser = xParser;
@@ -64,6 +65,7 @@ public class GetMapData2MultiEnsemble {
 			this.xMinmax = xMinmax;
 			this.yMinmax = yMinmax;
 			this.tile = tile;
+			this.comparedXParser = comparedXParser;
 		}
 		
 		@Override
@@ -75,7 +77,14 @@ public class GetMapData2MultiEnsemble {
 				double lng = this.xparser.getUlLatlng()[1] + w*this.xparser.getGeoInfo()[1];
 				double xvalue = this.xparser.getData()[index];
 				double yvalue = this.yparser.getData()[index];
-				this.tile.drawTiles(xvalue, yvalue, this.xthresholds, this.ythresholds, this.tfFunction, this.xMinmax, this.yMinmax, lat, lng);
+				double comparedXValue = this.comparedXParser.getData()[index];
+//				normalize them into range 0~1
+				double xnormalized = (Math.pow(xvalue-comparedXValue, 2.0) - xMinmax[0])/(xMinmax[1] - xMinmax[0]);
+				double ynormalized = (yvalue - yMinmax[0])/(yMinmax[1] - yMinmax[0]);
+//				position of the values in the threshold
+				int xpos = (int) (xnormalized / (1.0/(double)this.xthresholds.length));
+				int ypos = (int) (ynormalized / (1.0/(double)this.ythresholds.length));
+				this.tile.drawTiles(xpos, ypos, this.xthresholds, this.ythresholds, this.tfFunction, this.xMinmax, this.yMinmax, lat, lng);
 			}
 		}
 		
@@ -100,14 +109,14 @@ public class GetMapData2MultiEnsemble {
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
 		this.xmetricDir = this.basisDir + _dataType + "/GlobleStat/" + xmetric + ".tif";
+		String comparedXDir = this.basisDir + dataType + "/EnsembleStatOf" + ymetricB + "/" + "EnsembleStdOf" + ymetricB + ".tif";
 		this.ymetricDir = this.basisDir + _dataType + "/EnsembleStatOf" + ymetricB + "/" + ymetricA + "Of" + ymetricB + ".tif";
 		this.targetPath = this.basisDir + _dataType + "/Ensemble2Models/" + xmetric + "_" + ymetricA + "Of" + ymetricB + "_zoomLevel" + zoomLevel + ".tif";
 		String imgPath = this.targetPath.replace(".tif", "_zoomLevel"+ zoomLevel +".png");
 		
 		TiffParser xparser = new TiffParser(this.xmetricDir);
-		TiffParser yparser = new TiffParser(this.ymetricDir);
-		String[] colortf = colorTable.split("&");
 		
+		String[] colortf = colorTable.split("&");
 		GenerateTiles tile = new GenerateTiles(imgPath, null, "overviewVis", Integer.valueOf(zoomLevel), colortf);
 		double[] size = xparser.getSize();
 		LatLng southwest = new LatLng(xparser.getLrLatlng()[0], xparser.getUlLatlng()[1]);
@@ -122,6 +131,9 @@ public class GetMapData2MultiEnsemble {
 			return result;
 		}
 		
+		TiffParser comparedXParser = new TiffParser(comparedXDir);
+		TiffParser yparser = new TiffParser(this.ymetricDir);
+				
 		double[] xMinmax = xparser.getMinmax();
 		double[] yMinmax = yparser.getMinmax();
 		double[] _xthreshold = new double[xthresholds.split(",").length]; 
@@ -141,7 +153,7 @@ public class GetMapData2MultiEnsemble {
 			int h2 = (i+1) * delta;
 			int startIndex = h1 * tgtWidth;
 			int endIndex =  h2 * tgtWidth;
-			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, _xthreshold, _ythreshold, xMinmax, yMinmax, colortf, tile);
+			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, _xthreshold, _ythreshold, xMinmax, yMinmax, colortf, tile, comparedXParser);
 			drawOverviewMapThread[i] = new Thread(drawOverviewMapService[i]);
 			drawOverviewMapThread[i].start();
 		}

@@ -198,18 +198,12 @@ public class GenerateTiles {
 		
 	}
 	
-	public void drawTiles(double xvalue, double yvalue, double[] xThresholds, double[] yThresholds, String[] tfFunction, double[] xMinmax, double[] yMinmax, double lat, double lng){
+	public void drawTiles(int xpos, int ypos, double[] xThresholds, double[] yThresholds, String[] tfFunction, double[] xMinmax, double[] yMinmax, double lat, double lng){
 		LatLng latLng = new LatLng(lat, lng);
 		Point2D pt = this.latLngToLayerPoint(latLng);
 		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
 		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
 		int alpha = 255;
-//		normalize them into range 0~1
-		double xnormalized = (xvalue - xMinmax[0])/(xMinmax[1] - xMinmax[0]);
-		double ynormalized = (yvalue - yMinmax[0])/(yMinmax[1] - yMinmax[0]);
-//		position of the values in the threshold
-		int xpos = (int) (xnormalized / (1.0/(double)xThresholds.length));
-		int ypos = (int) (ynormalized / (1.0/(double)yThresholds.length));
 		String rgbStr = tfFunction[(int)(ypos * xThresholds.length + xpos)];
 		Color rgbColor = parse(rgbStr);
 		int[] rgb = {rgbColor.getRed(), rgbColor.getGreen(), rgbColor.getBlue()};
