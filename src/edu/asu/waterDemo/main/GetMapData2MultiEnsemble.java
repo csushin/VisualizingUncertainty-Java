@@ -12,6 +12,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
+import org.gdal.gdal.Dataset;
+import org.gdal.gdal.Driver;
+import org.gdal.gdal.gdal;
+import org.gdal.gdalconst.gdalconst;
 import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
@@ -79,7 +83,8 @@ public class GetMapData2MultiEnsemble {
 				double yvalue = this.yparser.getData()[index];
 				double comparedXValue = this.comparedXParser.getData()[index];
 //				normalize them into range 0~1
-				double xnormalized = (Math.pow(xvalue-comparedXValue, 2.0) - xMinmax[0])/(xMinmax[1] - xMinmax[0]);
+				double delta = xvalue-comparedXValue;
+				double xnormalized = (delta - xMinmax[0])/(xMinmax[1] - xMinmax[0]);
 				double ynormalized = (yvalue - yMinmax[0])/(yMinmax[1] - yMinmax[0]);
 //				position of the values in the threshold
 				int xpos = (int) (xnormalized / (1.0/(double)this.xthresholds.length));
@@ -117,6 +122,8 @@ public class GetMapData2MultiEnsemble {
 		TiffParser xparser = new TiffParser(this.xmetricDir);
 		
 		String[] colortf = colorTable.split("&");
+		System.out.println("colortf: ");
+		System.out.println(colortf);
 		GenerateTiles tile = new GenerateTiles(imgPath, null, "overviewVis", Integer.valueOf(zoomLevel), colortf);
 		double[] size = xparser.getSize();
 		LatLng southwest = new LatLng(xparser.getLrLatlng()[0], xparser.getUlLatlng()[1]);
@@ -133,8 +140,7 @@ public class GetMapData2MultiEnsemble {
 		
 		TiffParser comparedXParser = new TiffParser(comparedXDir);
 		TiffParser yparser = new TiffParser(this.ymetricDir);
-				
-		double[] xMinmax = xparser.getMinmax();
+		
 		double[] yMinmax = yparser.getMinmax();
 		double[] _xthreshold = new double[xthresholds.split(",").length]; 
 		double[] _ythreshold = new double[ythresholds.split(",").length];
@@ -145,6 +151,15 @@ public class GetMapData2MultiEnsemble {
 		
 		int tgtHeight = (int)size[0];
 		int tgtWidth = (int)size[1];
+//		look for the minimum and maximum value of the differences between ensemble std and global std
+		double[] deltaMinMax = {9999999,0};
+		for(int i=0; i<tgtHeight*tgtWidth; i++){
+			double delta = xparser.getData()[i]-comparedXParser.getData()[i];
+			if(delta<deltaMinMax[0])
+				deltaMinMax[0] = delta;
+			if(delta>deltaMinMax[1])
+				deltaMinMax[1] = delta;
+		}
 		DrawOverviewMapThreads[] drawOverviewMapService = new DrawOverviewMapThreads[NUMBER_OF_PROCESSORS];
 		Thread[]  drawOverviewMapThread = new Thread[NUMBER_OF_PROCESSORS];
 		int delta = tgtHeight/NUMBER_OF_PROCESSORS;
@@ -153,7 +168,7 @@ public class GetMapData2MultiEnsemble {
 			int h2 = (i+1) * delta;
 			int startIndex = h1 * tgtWidth;
 			int endIndex =  h2 * tgtWidth;
-			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, _xthreshold, _ythreshold, xMinmax, yMinmax, colortf, tile, comparedXParser);
+			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, _xthreshold, _ythreshold, deltaMinMax, yMinmax, colortf, tile, comparedXParser);
 			drawOverviewMapThread[i] = new Thread(drawOverviewMapService[i]);
 			drawOverviewMapThread[i].start();
 		}
@@ -170,4 +185,5 @@ public class GetMapData2MultiEnsemble {
 		result.imgStr = tile.writeBufferImage();
 		return result;
 	}
+	
 }
