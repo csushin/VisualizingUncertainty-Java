@@ -206,7 +206,10 @@ public class GenerateTiles {
 		int alpha = 255;
 		String rgbStr = tfFunction[(int)(ypos * xThresholds.length + xpos)];
 		Color rgbColor = parse(rgbStr);
-		int[] rgb = {rgbColor.getRed(), rgbColor.getGreen(), rgbColor.getBlue()};
+		int[] rgb = new int[3];
+		rgb[0] = rgbColor.getRed();
+		rgb[1] = rgbColor.getGreen();
+		rgb[2] = rgbColor.getBlue();
 		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
 //		System.out.println("wImg: " + wImg + " hImg: " + hImg);
 		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())

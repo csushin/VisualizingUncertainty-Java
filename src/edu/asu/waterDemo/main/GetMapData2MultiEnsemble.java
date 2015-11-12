@@ -80,11 +80,11 @@ public class GetMapData2MultiEnsemble {
 				double comparedXValue = this.comparedXParser.getData()[index];
 //				normalize them into range 0~1
 				double delta = xvalue-comparedXValue;
-				double xnormalized = (delta - xMinmax[0])/(xMinmax[1] - xMinmax[0]);
-				double ynormalized = (yvalue - yMinmax[0])/(yMinmax[1] - yMinmax[0]);
+				double xnormalized = (delta - xMinmax[0])/(double)(xMinmax[1] - xMinmax[0]);
+				double ynormalized = (yvalue - yMinmax[0])/(double)(yMinmax[1] - yMinmax[0]);
 //				position of the values in the threshold
-				int xpos = (int) (xnormalized / (1.0/(double)this.xthresholds.length));
-				int ypos = (int) (ynormalized / (1.0/(double)this.ythresholds.length));
+				int xpos = (int) Math.floor(xnormalized / (1.0/(double)this.xthresholds.length));
+				int ypos = (int) Math.floor(ynormalized / (1.0/(double)this.ythresholds.length));
 				this.tile.drawTiles(xpos, ypos, this.xthresholds, this.ythresholds, this.tfFunction, this.xMinmax, this.yMinmax, lat, lng);
 			}
 		}
