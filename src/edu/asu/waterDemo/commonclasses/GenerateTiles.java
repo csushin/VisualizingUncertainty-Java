@@ -74,6 +74,7 @@ public class GenerateTiles {
 		this.setZoomLevel(zoomLevel);
 	}
 	
+	
 	public void processWidthHeight(int xSize, int ySize, LatLng southwest, LatLng northeast){
 		Point pixelSW = this.latLngToLayerPoint(southwest);
 		Point pixelNE = this.latLngToLayerPoint(northeast);
@@ -195,6 +196,27 @@ public class GenerateTiles {
 		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
 			this.getImg().setRGB(wImg, hImg, color);
 		
+	}
+	
+	public void drawTiles(double xvalue, double yvalue, double[] xThresholds, double[] yThresholds, String[] tfFunction, double[] xMinmax, double[] yMinmax, double lat, double lng){
+		LatLng latLng = new LatLng(lat, lng);
+		Point2D pt = this.latLngToLayerPoint(latLng);
+		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
+		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
+		int alpha = 255;
+//		normalize them into range 0~1
+		double xnormalized = (xvalue - xMinmax[0])/(xMinmax[1] - xMinmax[0]);
+		double ynormalized = (yvalue - yMinmax[0])/(yMinmax[1] - yMinmax[0]);
+//		position of the values in the threshold
+		int xpos = (int) (xnormalized / (1.0/(double)xThresholds.length));
+		int ypos = (int) (ynormalized / (1.0/(double)yThresholds.length));
+		String rgbStr = tfFunction[(int)(ypos * xThresholds.length + xpos)];
+		Color rgbColor = parse(rgbStr);
+		int[] rgb = {rgbColor.getRed(), rgbColor.getGreen(), rgbColor.getBlue()};
+		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
+//		System.out.println("wImg: " + wImg + " hImg: " + hImg);
+		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
+			this.getImg().setRGB(wImg, hImg, color);
 	}
 	
 	private int indexAlpha(double[] values){

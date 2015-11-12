@@ -44,36 +44,38 @@ public class GetMapData2MultiEnsemble {
 	public class DrawOverviewMapThreads implements Runnable{
 		private int startIndex;
 		private int endIndex;
-		private TiffParser parser;
+		private TiffParser xparser;
+		private TiffParser yparser;
 		private double[] xthresholds;
 		private double[] ythresholds;
 		private String[] tfFunction;
+		private double[] xMinmax;
+		private double[] yMinmax;
 		private GenerateTiles tile;
 		
-		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser Parser, double[] xthresholds, double[] ythresholds, String[] tfFucntion, GenerateTiles tile){
+		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser xParser, TiffParser yParser, double[] xthresholds, double[] ythresholds, double[] xMinmax, double[] yMinmax, String[] tfFucntion, GenerateTiles tile){
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
-			this.parser = Parser;
+			this.xparser = xParser;
+			this.yparser = yParser;
 			this.xthresholds = xthresholds;
 			this.ythresholds = ythresholds;
 			this.tfFunction = tfFucntion;
+			this.xMinmax = xMinmax;
+			this.yMinmax = yMinmax;
 			this.tile = tile;
 		}
 		
 		@Override
 		public void run() {
 			for(int index=this.startIndex; index<this.endIndex; index++){
-				int h = index/(int)this.parser.getSize()[1];
-				int w = index%(int)this.parser.getSize()[1];
-				double lat = this.parser.getUlLatlng()[0] + h*this.parser.getGeoInfo()[5];
-				double lng = this.parser.getUlLatlng()[1] + w*this.parser.getGeoInfo()[1];
-				double value = this.parser.getData()[index];
-				try {
-					this.tile.drawTiles(value, this.thresholds, this.tfFunction, lat, lng);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				int h = index/(int)this.xparser.getSize()[1];
+				int w = index%(int)this.xparser.getSize()[1];
+				double lat = this.xparser.getUlLatlng()[0] + h*this.xparser.getGeoInfo()[5];
+				double lng = this.xparser.getUlLatlng()[1] + w*this.xparser.getGeoInfo()[1];
+				double xvalue = this.xparser.getData()[index];
+				double yvalue = this.yparser.getData()[index];
+				this.tile.drawTiles(xvalue, yvalue, this.xthresholds, this.ythresholds, this.tfFunction, this.xMinmax, this.yMinmax, lat, lng);
 			}
 		}
 		
@@ -123,6 +125,12 @@ public class GetMapData2MultiEnsemble {
 		
 		double[] xMinmax = xparser.getMinmax();
 		double[] yMinmax = yparser.getMinmax();
+		double[] _xthreshold = new double[xthresholds.split(",").length]; 
+		double[] _ythreshold = new double[ythresholds.split(",").length];
+		for(int i=0; i<_xthreshold.length; i++)
+			_xthreshold[i] = Double.valueOf(xthresholds.split(",")[i]);
+		for(int j=0; j<_ythreshold.length; j++)
+			_ythreshold[j] = Double.valueOf(ythresholds.split(",")[j]);
 		
 		int tgtHeight = (int)size[0];
 		int tgtWidth = (int)size[1];
@@ -134,7 +142,7 @@ public class GetMapData2MultiEnsemble {
 			int h2 = (i+1) * delta;
 			int startIndex = h1 * tgtWidth;
 			int endIndex =  h2 * tgtWidth;
-			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, xthreshold, ythreshold, colortf, tile);
+			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, xparser, yparser, _xthreshold, _ythreshold, xMinmax, yMinmax, colortf, tile);
 			drawOverviewMapThread[i] = new Thread(drawOverviewMapService[i]);
 			drawOverviewMapThread[i].start();
 		}
@@ -148,6 +156,7 @@ public class GetMapData2MultiEnsemble {
 			e.printStackTrace();
 		}
 		
+		result.imgStr = tile.writeBufferImage();
 		return result;
 	}
 }
