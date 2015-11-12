@@ -1,8 +1,6 @@
 package edu.asu.waterDemo.main;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -12,10 +10,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
-import org.gdal.gdal.Dataset;
-import org.gdal.gdal.Driver;
-import org.gdal.gdal.gdal;
-import org.gdal.gdalconst.gdalconst;
+
+
 import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
