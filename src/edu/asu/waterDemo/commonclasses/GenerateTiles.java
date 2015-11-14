@@ -203,17 +203,19 @@ public class GenerateTiles {
 		Point2D pt = this.latLngToLayerPoint(latLng);
 		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
 		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
-		int alpha = 255;
-		String rgbStr = tfFunction[(int)(ypos * xThresholds.length + xpos)];
-		Color rgbColor = parse(rgbStr);
 		int[] rgb = new int[3];
-		rgb[0] = rgbColor.getRed();
-		rgb[1] = rgbColor.getGreen();
-		rgb[2] = rgbColor.getBlue();
+		int alpha = 0;
+		if(xpos!=-1 && ypos!=-1){
+			alpha = 255;
+			String rgbStr = tfFunction[(int)(ypos * xThresholds.length + xpos)];
+			Color rgbColor = parse(rgbStr);
+			rgb[0] = rgbColor.getRed();
+			rgb[1] = rgbColor.getGreen();
+			rgb[2] = rgbColor.getBlue();
+		}
 		int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
-//		System.out.println("wImg: " + wImg + " hImg: " + hImg);
 		if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
-			this.getImg().setRGB(wImg, hImg, color);
+			this.getImg().setRGB(wImg, hImg, color);		
 	}
 	
 	private int indexAlpha(double[] values){
