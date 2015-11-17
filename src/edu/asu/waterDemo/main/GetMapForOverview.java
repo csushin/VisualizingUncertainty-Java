@@ -137,20 +137,21 @@ public class GetMapForOverview {
 		
 		String sourceDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
 		double[] globalMinmax = {999999999,0};
+		globalMinmax = targetparser.getMinmax();
 //		if(dataType.equalsIgnoreCase("Ensemble")){
 //			globalMinmax = targetparser.getMinmax();
 //		}else{
-			ArrayList<File> files = new ArrayList<File>();
-			files = getAllFiles(sourceDir, files);
-			ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
-			parsers = parseFilesThread(files, parsers);
-			for(TiffParser each : parsers){
-				double[] minmax = each.getMinmax();
-				if(globalMinmax[0] > minmax[0])
-					globalMinmax[0] = minmax[0];
-				if(globalMinmax[1] < minmax[1])
-					globalMinmax[1] = minmax[1];
-			}
+//			ArrayList<File> files = new ArrayList<File>();
+//			files = getAllFiles(sourceDir, files);
+//			ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
+//			parsers = parseFilesThread(files, parsers);
+//			for(TiffParser each : parsers){
+//				double[] minmax = each.getMinmax();
+//				if(globalMinmax[0] > minmax[0])
+//					globalMinmax[0] = minmax[0];
+//				if(globalMinmax[1] < minmax[1])
+//					globalMinmax[1] = minmax[1];
+//			}
 //		}
 		
 		

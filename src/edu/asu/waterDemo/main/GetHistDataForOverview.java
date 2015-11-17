@@ -56,7 +56,7 @@ public class GetHistDataForOverview {
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("type") @DefaultValue("null") String type,
 			@QueryParam("key") @DefaultValue("null") String key,
-			@QueryParam("binSize") @DefaultValue("") String binSize,
+			@QueryParam("binSize") @DefaultValue("null") String binSize,
 			@QueryParam("variable") @DefaultValue("null") String variable) throws IOException{
 		HistDataBean result = new HistDataBean();
 		String _dataType = dataType;
@@ -118,21 +118,22 @@ public class GetHistDataForOverview {
 		String sourceDir = this.basisDir + _dataType + "/" + type + metricType + File.separatorChar;
 		TiffParser targetparser = new TiffParser(this.targetFile);
 //		double[] MinMax = targetparser.getMinmax();
-		double[] globalMinmax = {999999999,0};
+		double[] globalMinmax = {999999999, 0};
+		globalMinmax = targetparser.getMinmax();
 //		if(dataType.equalsIgnoreCase("Ensemble")){
 //			globalMinmax = targetparser.getMinmax();
 //		}else{
-			ArrayList<File> files = new ArrayList<File>();
-			files = getAllFiles(sourceDir, files);
-			ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
-			parsers = parseFilesThread(files, parsers);
-			for(TiffParser each : parsers){
-				double[] minmax = each.getMinmax();
-				if(globalMinmax[0] > minmax[0])
-					globalMinmax[0] = minmax[0];
-				if(globalMinmax[1] < minmax[1])
-					globalMinmax[1] = minmax[1];
-			}
+//			ArrayList<File> files = new ArrayList<File>();
+//			files = getAllFiles(sourceDir, files);
+//			ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
+//			parsers = parseFilesThread(files, parsers);
+//			for(TiffParser each : parsers){
+//				double[] minmax = each.getMinmax();
+//				if(globalMinmax[0] > minmax[0])
+//					globalMinmax[0] = minmax[0];
+//				if(globalMinmax[1] < minmax[1])
+//					globalMinmax[1] = minmax[1];
+//			}
 //		}
 		
 		double[] histData = new double[Integer.valueOf(binSize)];
