@@ -100,7 +100,7 @@ public class GetMapForOverview {
 			_dataType = "tasmin_HIST";
 		this.metricDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
 		if(dataType.equalsIgnoreCase("Ensemble")){
-			String _variable = "";
+			String _variable = variable;
 			if(variable.equals("Precipitation"))
 				_variable = "pr_HIST";
 			if(variable.equals("TemperatureMin"))
