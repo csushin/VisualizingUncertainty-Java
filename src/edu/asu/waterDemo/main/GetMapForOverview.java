@@ -16,6 +16,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
 import edu.asu.waterDemo.commonclasses.LatLng;
+import edu.asu.waterDemo.commonclasses.LoadTiffThread;
 import edu.asu.waterDemo.commonclasses.TiffParser;
 import edu.asu.waterDemo.main.DrawFuzzyThresholdsMap.DrawFuzzyThreads;
 
@@ -134,22 +135,23 @@ public class GetMapForOverview {
 			return result;
 		}
 		
-		double[] globalMinmax = new double[2];
-		if(dataType.equalsIgnoreCase("Ensemble")){
-			globalMinmax = targetparser.getMinmax();
-		}else{
+		String sourceDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
+		double[] globalMinmax = {999999999,0};
+//		if(dataType.equalsIgnoreCase("Ensemble")){
+//			globalMinmax = targetparser.getMinmax();
+//		}else{
 			ArrayList<File> files = new ArrayList<File>();
-			files = getAllFiles(this.metricDir, files);
-			for(File each : files){
-				String filepath = each.getAbsolutePath();
-				TiffParser eachparser = new TiffParser(filepath);
-				double[] minmax = eachparser.getMinmax();
+			files = getAllFiles(sourceDir, files);
+			ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
+			parsers = parseFilesThread(files, parsers);
+			for(TiffParser each : parsers){
+				double[] minmax = each.getMinmax();
 				if(globalMinmax[0] > minmax[0])
 					globalMinmax[0] = minmax[0];
 				if(globalMinmax[1] < minmax[1])
 					globalMinmax[1] = minmax[1];
 			}
-		}
+//		}
 		
 		
 		
@@ -187,6 +189,31 @@ public class GetMapForOverview {
 		
 		return result;
 	}
+	
+	public ArrayList<TiffParser> parseFilesThread(ArrayList<File> files, ArrayList<TiffParser> parsers){
+		LoadTiffThread[] service = new LoadTiffThread[files.size()];
+		Thread[] serverThread = new Thread[files.size()];
+		for(int i=0; i<files.size(); i++){
+			String filePath = files.get(i).getAbsolutePath();
+			service[i] = new LoadTiffThread(filePath);
+			serverThread[i] = new Thread(service[i]);
+			serverThread[i].start();
+		}
+		
+		try {
+			for(int i=0; i<files.size(); i++){
+				serverThread[i].join();
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		for(int i=0; i<files.size(); i++){
+			parsers.add(service[i].getResult());
+		}
+		return parsers;
+}
 	
 	public ArrayList<File> getAllFiles(String directoryName, ArrayList<File> files) {
 	    File directory = new File(directoryName);

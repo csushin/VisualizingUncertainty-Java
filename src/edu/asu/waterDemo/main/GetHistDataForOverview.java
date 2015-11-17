@@ -1,5 +1,6 @@
 package edu.asu.waterDemo.main;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,6 +19,7 @@ import javax.ws.rs.core.Context;
 import org.glassfish.jersey.server.JSONP;
 
 import edu.asu.waterDemo.commonclasses.GetHistDataThread;
+import edu.asu.waterDemo.commonclasses.LoadTiffThread;
 import edu.asu.waterDemo.commonclasses.TiffParser;
 
 @Path("/getHistData")
@@ -113,24 +115,25 @@ public class GetHistDataForOverview {
 			return result;
 		}
 		
+		String sourceDir = this.basisDir + _dataType + "/" + type + metricType + File.separatorChar;
 		TiffParser targetparser = new TiffParser(this.targetFile);
 //		double[] MinMax = targetparser.getMinmax();
-		double[] globalMinmax = new double[2];
-		if(dataType.equalsIgnoreCase("Ensemble")){
-			globalMinmax = targetparser.getMinmax();
-		}else{
+		double[] globalMinmax = {999999999,0};
+//		if(dataType.equalsIgnoreCase("Ensemble")){
+//			globalMinmax = targetparser.getMinmax();
+//		}else{
 			ArrayList<File> files = new ArrayList<File>();
-			files = getAllFiles(this.metricDir, files);
-			for(File each : files){
-				String filepath = each.getAbsolutePath();
-				TiffParser eachparser = new TiffParser(filepath);
-				double[] minmax = eachparser.getMinmax();
+			files = getAllFiles(sourceDir, files);
+			ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
+			parsers = parseFilesThread(files, parsers);
+			for(TiffParser each : parsers){
+				double[] minmax = each.getMinmax();
 				if(globalMinmax[0] > minmax[0])
 					globalMinmax[0] = minmax[0];
 				if(globalMinmax[1] < minmax[1])
 					globalMinmax[1] = minmax[1];
 			}
-		}
+//		}
 		
 		double[] histData = new double[Integer.valueOf(binSize)];
 		
@@ -172,6 +175,32 @@ public class GetHistDataForOverview {
 		result.min = globalMinmax[0];
 		result.max = globalMinmax[1];
 		return result;
+	}
+	
+	// module for parsing tiff files
+	public ArrayList<TiffParser> parseFilesThread(ArrayList<File> files, ArrayList<TiffParser> parsers){
+			LoadTiffThread[] service = new LoadTiffThread[files.size()];
+			Thread[] serverThread = new Thread[files.size()];
+			for(int i=0; i<files.size(); i++){
+				String filePath = files.get(i).getAbsolutePath();
+				service[i] = new LoadTiffThread(filePath);
+				serverThread[i] = new Thread(service[i]);
+				serverThread[i].start();
+			}
+			
+			try {
+				for(int i=0; i<files.size(); i++){
+					serverThread[i].join();
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			for(int i=0; i<files.size(); i++){
+				parsers.add(service[i].getResult());
+			}
+			return parsers;
 	}
 	
 	private String getAllFiles(String directoryName, String keyword) {

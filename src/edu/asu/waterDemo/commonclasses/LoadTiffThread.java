@@ -1,13 +1,7 @@
 package edu.asu.waterDemo.commonclasses;
 
-import java.util.ArrayList;
-
 public class LoadTiffThread implements Runnable{
 	private TiffParser parser;
-	private int startIndex;
-	private int endIndex;
-	private ArrayList<String> sPathList;
-	private ArrayList<TiffParser> sParserArr;
 	private String filePath;
 	
 	public LoadTiffThread(String filePath){
