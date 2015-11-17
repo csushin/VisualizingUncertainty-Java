@@ -15,20 +15,6 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.lang3.ArrayUtils;

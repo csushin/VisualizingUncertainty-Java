@@ -116,9 +116,9 @@ public class GetEnsembleStatsByPoint {
 		ArrayList<double[]> locations = new ArrayList<double[]>();
 		int tgtHeight = (int) tgtParser.getSize()[0];
 		int tgtWidth = (int) tgtParser.getSize()[1];
-		for(int hInd=0; h<tgtHeight; h++){
-			for(int wInd=0; w<tgtWidth; w++){
-				int tgtIndex = h*tgtWidth+w;
+		for(int hInd=0; hInd<tgtHeight; hInd++){
+			for(int wInd=0; wInd<tgtWidth; wInd++){
+				int tgtIndex = hInd*tgtWidth+wInd;
 				double _value = tgtParser.getData()[tgtIndex];
 				if(Math.abs(_value - value)<Double.valueOf(errorRange)){
 					indices.add(tgtIndex);
