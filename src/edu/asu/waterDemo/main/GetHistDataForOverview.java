@@ -54,7 +54,8 @@ public class GetHistDataForOverview {
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("type") @DefaultValue("null") String type,
 			@QueryParam("key") @DefaultValue("null") String key,
-			@QueryParam("binSize") @DefaultValue("") String binSize) throws IOException{
+			@QueryParam("binSize") @DefaultValue("") String binSize,
+			@QueryParam("variable") @DefaultValue("null") String variable) throws IOException{
 		HistDataBean result = new HistDataBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
@@ -62,8 +63,24 @@ public class GetHistDataForOverview {
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
 		this.metricDir = this.basisDir + _dataType + "/" + type + metricType + File.separatorChar;
+		if(dataType.equalsIgnoreCase("Ensemble")){
+			String _variable = "";
+			if(variable.equals("Precipitation"))
+				_variable = "pr_HIST";
+			if(variable.equals("TemperatureMin"))
+				_variable = "tasmin_HIST";
+			this.metricDir = this.basisDir + _variable + "/EnsembleStatOfTimeMean/";
+			this.targetFile = this.metricDir + "Ensemble" + metricType + "OfTimeMean.tif";
+		}
+		else{
+			this.targetFile = getAllFiles(this.metricDir, key);
+		}
+		
 		if(metricType.contains("Area")){
-			this.targetFile = getAllFilesForArea(this.metricDir, key);
+			if(dataType.equalsIgnoreCase("Ensemble"))
+				this.targetFile = this.metricDir + "Ensemble" + metricType + "OfTimeMean.tif";
+			else
+				this.targetFile = getAllFilesForArea(this.metricDir, key);
 			BufferedReader br = new BufferedReader(new FileReader(this.targetFile));
 			try {
 			    StringBuilder sb = new StringBuilder();
@@ -95,9 +112,26 @@ public class GetHistDataForOverview {
 			}
 			return result;
 		}
-		this.targetFile = getAllFiles(this.metricDir, key);
+		
 		TiffParser targetparser = new TiffParser(this.targetFile);
-		double[] MinMax = targetparser.getMinmax();
+//		double[] MinMax = targetparser.getMinmax();
+		double[] globalMinmax = new double[2];
+		if(dataType.equalsIgnoreCase("Ensemble")){
+			globalMinmax = targetparser.getMinmax();
+		}else{
+			ArrayList<File> files = new ArrayList<File>();
+			files = getAllFiles(this.metricDir, files);
+			for(File each : files){
+				String filepath = each.getAbsolutePath();
+				TiffParser eachparser = new TiffParser(filepath);
+				double[] minmax = eachparser.getMinmax();
+				if(globalMinmax[0] > minmax[0])
+					globalMinmax[0] = minmax[0];
+				if(globalMinmax[1] < minmax[1])
+					globalMinmax[1] = minmax[1];
+			}
+		}
+		
 		double[] histData = new double[Integer.valueOf(binSize)];
 		
 		double[] sSize = targetparser.getSize();
@@ -114,7 +148,7 @@ public class GetHistDataForOverview {
 			int endIndex =  h2 * tgtWidth;
 			double[] eachHistData = new double[Integer.valueOf(binSize)];
 			data.add(eachHistData);
-			getHistService[i] = new GetHistDataThread(targetparser, eachHistData, MinMax, startIndex, endIndex, Integer.valueOf(binSize));
+			getHistService[i] = new GetHistDataThread(targetparser, eachHistData, globalMinmax, startIndex, endIndex, Integer.valueOf(binSize));
 			getHistThread[i] = new Thread(getHistService[i]);
 			getHistThread[i].start();
 		}
@@ -135,8 +169,8 @@ public class GetHistDataForOverview {
 		result.hist = histData;
 		result.metric = metricType;
 		result.data = dataType;
-		result.min = MinMax[0];
-		result.max = MinMax[1];
+		result.min = globalMinmax[0];
+		result.max = globalMinmax[1];
 		return result;
 	}
 	
@@ -151,6 +185,23 @@ public class GetHistDataForOverview {
 	        } 
 	    }
 	    return null;
+	}
+	
+	public ArrayList<File> getAllFiles(String directoryName, ArrayList<File> files) {
+	    File directory = new File(directoryName);
+
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    for (File file : fList) {
+	    	String name = file.getName();
+	        if (file.isFile() && name.endsWith(".tif") && !name.contains("MPI-ESM-LR_CCLM") && !name.contains("HadGEM2-ES_CCLM") && !name.contains("EC-EARTH-r12_CCLM")
+					&& !name.contains("CNRM-CM5_CCLM") && !name.contains("EC-EARTH-r3_HIRHAM")) {
+	            files.add(file);
+	        } else if (file.isDirectory()) {
+	        	getAllFiles(file.getAbsolutePath(), files);
+	        }
+	    }
+	    return files;
 	}
 	
 	private String getAllFilesForArea(String directoryName, String keyword) {

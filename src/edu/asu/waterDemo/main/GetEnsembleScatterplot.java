@@ -48,7 +48,12 @@ public class GetEnsembleScatterplot {
 			@QueryParam("dataType") @DefaultValue("null") String dataType) throws IOException{
 		GetEnsembleScatterplotBean result = new GetEnsembleScatterplotBean();
 		ArrayList<File> files = new ArrayList<File>();
-		String basisDir =  this.basisDir + dataType + "/SpatialStat/";
+		String _dataType = dataType;
+		if(dataType.equals("Precipitation"))
+			_dataType = "pr_HIST";
+		if(dataType.equals("TemperatureMin"))
+			_dataType = "tasmin_HIST";
+		String basisDir =  this.basisDir + _dataType + "/SpatialStat/";
 		files = getAllFiles(basisDir, files);
 		String[] histData = new String[files.size()];
 		double[] xMinmax = {999999999, 0};
@@ -80,7 +85,7 @@ public class GetEnsembleScatterplot {
 			    		key = eachstr.split("_")[1] + "_" +eachstr.split("_")[2];
 			    }
 			}
-			histData[files.indexOf(eachfile)] = xMinmax[0] + "," + xMinmax[1] + "," + key;
+			histData[files.indexOf(eachfile)] = xANDy[0] + "," + xANDy[1] + "," + key;
 			in.close();
 		}
 		result.histData = histData;

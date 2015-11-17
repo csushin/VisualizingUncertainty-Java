@@ -17,16 +17,17 @@ import org.glassfish.jersey.server.JSONP;
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
 import edu.asu.waterDemo.commonclasses.LatLng;
 import edu.asu.waterDemo.commonclasses.TiffParser;
-import edu.asu.waterDemo.main.DrawFuzzyThresholdsMap.DrawFuzzyThreads;
+import edu.asu.waterDemo.main.GetMapForOverview.DrawOverviewMapThreads;
+import edu.asu.waterDemo.main.GetMapForOverview.GetMapForOverviewBean;
 
-@Path("/getMapData")
-public class GetMapForOverview {
+@Path("/getMapData2MultiEnsembleSingleTF")
+public class GetMapData2MultiEnsembleSingleTF {
 	private String basisDir;
 	private String targetPath;
 	private int NUMBER_OF_PROCESSORS = 30;
 	private String metricDir;
 	
-	public class GetMapForOverviewBean{
+	public class GetMapData2MultiEnsembleSingleTFBean{
 		public String imgStr;
 	}
 	
@@ -80,37 +81,19 @@ public class GetMapForOverview {
 	@GET
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
-	public GetMapForOverviewBean query(
-			@QueryParam("metricType") @DefaultValue("null") String metricType,
+	public GetMapData2MultiEnsembleSingleTFBean query(
+			@QueryParam("metricA") @DefaultValue("null") String metricA,
+			@QueryParam("metricB") @DefaultValue("null") String metricB,
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
-			@QueryParam("modalType") @DefaultValue("null") String modalType,
-			@QueryParam("key") @DefaultValue("null") String key,
-			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable,
-			@QueryParam("thresholds") @DefaultValue("null") String thresholds,
-			@QueryParam("min") @DefaultValue("null") String min,
-			@QueryParam("max") @DefaultValue("null") String max,
-			@QueryParam("tfType") @DefaultValue("null") String tfType,
-			@QueryParam("variable") @DefaultValue("null") String variable){
-		GetMapForOverviewBean result = new GetMapForOverviewBean();
+			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel){
+		GetMapData2MultiEnsembleSingleTFBean result = new GetMapData2MultiEnsembleSingleTFBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
-		this.metricDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
-		if(dataType.equalsIgnoreCase("Ensemble")){
-			String _variable = "";
-			if(variable.equals("Precipitation"))
-				_variable = "pr_HIST";
-			if(variable.equals("TemperatureMin"))
-				_variable = "tasmin_HIST";
-			this.metricDir = this.basisDir + _variable + "/EnsembleStatOfTimeMean/";
-			this.targetPath = this.metricDir + "Ensemble" + metricType + "OfTimeMean.tif";
-		}
-		else{
-			this.targetPath = getAllFiles(this.metricDir, key);
-		}
+		this.targetPath = this.basisDir + _dataType + "/EnsembleStatOf" + metricB + "/" + metricA + "Of" + metricB + ".tif";
 			
 		
 		String imgPath = this.targetPath.replace(".tif", "_zoomLevel"+ zoomLevel +".png");
@@ -134,23 +117,7 @@ public class GetMapForOverview {
 		}
 		
 		double[] globalMinmax = new double[2];
-		if(dataType.equalsIgnoreCase("Ensemble")){
-			globalMinmax = targetparser.getMinmax();
-		}else{
-			ArrayList<File> files = new ArrayList<File>();
-			files = getAllFiles(this.metricDir, files);
-			for(File each : files){
-				String filepath = each.getAbsolutePath();
-				TiffParser eachparser = new TiffParser(filepath);
-				double[] minmax = eachparser.getMinmax();
-				if(globalMinmax[0] > minmax[0])
-					globalMinmax[0] = minmax[0];
-				if(globalMinmax[1] < minmax[1])
-					globalMinmax[1] = minmax[1];
-			}
-		}
-		
-		
+		globalMinmax = targetparser.getMinmax();
 		
 		double[] _thresholds = new double[colortf.length-1];
 		for(int i=0; i<colortf.length-1; i++){
@@ -185,35 +152,5 @@ public class GetMapForOverview {
 		result.imgStr = tile.writeBufferImage();
 		
 		return result;
-	}
-	
-	public ArrayList<File> getAllFiles(String directoryName, ArrayList<File> files) {
-	    File directory = new File(directoryName);
-
-	    // get all the files from a directory
-	    File[] fList = directory.listFiles();
-	    for (File file : fList) {
-	    	String name = file.getName();
-	        if (file.isFile() && name.endsWith(".tif") && !name.contains("MPI-ESM-LR_CCLM") && !name.contains("HadGEM2-ES_CCLM") && !name.contains("EC-EARTH-r12_CCLM")
-					&& !name.contains("CNRM-CM5_CCLM") && !name.contains("EC-EARTH-r3_HIRHAM")) {
-	            files.add(file);
-	        } else if (file.isDirectory()) {
-	        	getAllFiles(file.getAbsolutePath(), files);
-	        }
-	    }
-	    return files;
-	}
-	
-	private String getAllFiles(String directoryName, String keyword) {
-	    File directory = new File(directoryName);
-
-	    // get all the files from a directory
-	    File[] fList = directory.listFiles();
-	    for (File file : fList) {
-	        if (file.isFile() && file.getName().endsWith(".tif") && file.getName().contains(keyword)) {
-	        	return file.getAbsolutePath();
-	        } 
-	    }
-	    return null;
 	}
 }
