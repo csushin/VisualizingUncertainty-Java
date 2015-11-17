@@ -130,6 +130,7 @@ public class GetMapForOverview {
 		// if the img already exists, then convert it to base64 and return the string
 		if(imgFile.exists()){
 			result.imgStr = tile.encodeFromReaderToBase64(imgPath, "PNG");
+			System.out.println("Use existed image!");
 			return result;
 		}
 		
