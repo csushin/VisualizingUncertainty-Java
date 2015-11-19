@@ -171,9 +171,9 @@ public class GetMatrixData {
 			e.printStackTrace();
 		}
 		
-		String meanParserPath = this.basisDir + _dataType + "/EnsembleStatOf" + sourceDim + "/EnsembleMeanOf" + sourceDim;
+		String meanParserPath = this.basisDir + _dataType + "/EnsembleStatOf" + sourceDim + "/EnsembleMeanOf" + sourceDim + ".tif";
 		TiffParser meanparser = new TiffParser(meanParserPath);
-		String stdParserPath = this.basisDir + _dataType + "/EnsembleStatOf" + sourceDim + "/EnsembleStdOf" + sourceDim;
+		String stdParserPath = this.basisDir + _dataType + "/EnsembleStatOf" + sourceDim + "/EnsembleStdOf" + sourceDim + ".tif";
 		TiffParser stdparser = new TiffParser(stdParserPath);
 		ArrayList<MatrixUnit> data = new ArrayList<MatrixUnit>();
 		int countPerThread = indicesStr.length / NUMBER_OF_PROCESSORS;
