@@ -39,8 +39,8 @@ public class GetMatrixData {
 			    "MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17",
 			    "MPI-M-MPI-ESM-LR_SMHI-RCA4",
 			    "NCC-NorESM1-M_SMHI-RCA4",
-			    "NOAA-GFDL-GFDL-ESM2M_SMHI-RCA4"
-	};
+			    "NOAA-GFDL-GFDL-ESM2M_SMHI-RCA4"};
+	
 	private int NUMBER_OF_PROCESSORS = MODELNAME.length;
 	
 	public class MatrixUnit{
@@ -149,7 +149,7 @@ public class GetMatrixData {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
-		basis = this.basisDir + _dataType + "/" + sourceDim;
+		basis = this.basisDir + _dataType + "/" + sourceDim + "/";
 		GetModelStatsThread[] getModelStatsService = new GetModelStatsThread[NUMBER_OF_PROCESSORS];
 		Thread[]  getModelStatsThread = new Thread[NUMBER_OF_PROCESSORS];
 		HashMap<String, double[]> valuesPerModel = new HashMap<String, double[]>();
@@ -204,7 +204,7 @@ public class GetMatrixData {
 	
 	private String getAllFiles(String directoryName, String keyword) {
 	    File directory = new File(directoryName);
-
+	    System.out.println("directory Name: " + directoryName);
 	    // get all the files from a directory
 	    File[] fList = directory.listFiles();
 	    for (File file : fList) {

@@ -184,7 +184,7 @@ public class GetEnsembleStatsByPoint {
 		    if(!existedKey){
 		    	distinctStats.put(stats, 1);
 		    	distinctIndices.add(indices.get(i));
-		    }
+		    }	
 		}
 		System.out.println("distinctStats Finished!");
 		//	convert the distinct combinations into a Javascript friendly format	
