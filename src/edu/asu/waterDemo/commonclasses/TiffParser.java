@@ -1,5 +1,7 @@
 package edu.asu.waterDemo.commonclasses;
 
+import java.util.ArrayList;
+
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
@@ -16,6 +18,39 @@ public class TiffParser {
 	private double[] data;
 	private double[] size;
 	private double[] minmax;
+	private int NUMBER_OF_PROCESSORS = 16;
+	
+	
+	public class FindMaxMinThread implements Runnable{
+		private int startIndex;
+		private int endIndex;
+		private double[] minmax;
+		private double[] data;
+		
+		public FindMaxMinThread(double[] minmax, int startIndex, int endIndex, double[] data){
+			this.startIndex = startIndex;
+			this.endIndex = endIndex;
+			this.minmax = minmax;
+			this.data = data;
+		}
+		
+		@Override
+		public void run() {
+			for(int i=startIndex; i<endIndex; i++){
+				double value = this.data[i];
+				if(value!=-1 && !Double.isNaN(value)){
+					if(this.minmax[0] > value)
+						this.minmax[0] = value;
+					if(this.minmax[1] < value)
+						this.minmax[1] = value;
+				}
+			}
+		}
+		
+		public double[] getResult(){
+			return this.minmax;
+		}
+	}
 
 	public double[] getMinmax() {
 		return minmax;
@@ -186,15 +221,47 @@ public class TiffParser {
 	public void GetMinMax(double[] minmax){
 		minmax[0] = 99999999;
 		minmax[1] = 0;
-		for(int i=0; i<this.size[0]*this.size[1]; i++){
-			double value = this.getData()[i];
-			if(value!=-1 && !Double.isNaN(value)){
-				if(value<minmax[0])
-					minmax[0] = this.getData()[i];
-				if(value>minmax[1])
-					minmax[1] = this.getData()[i];				
+//		for(int i=0; i<this.size[0]*this.size[1]; i++){
+//			double value = this.getData()[i];
+//			if(value!=-1 && !Double.isNaN(value)){
+//				if(value<minmax[0])
+//					minmax[0] = this.getData()[i];
+//				if(value>minmax[1])
+//					minmax[1] = this.getData()[i];				
+//			}
+//		}		
+		FindMaxMinThread[] getMinmaxService = new FindMaxMinThread[NUMBER_OF_PROCESSORS];
+		Thread[]  getMinmaxThread = new Thread[NUMBER_OF_PROCESSORS];
+		int tgtHeight = (int) this.getSize()[0];
+		int tgtWidth = (int) this.getSize()[1];
+		int delta = tgtHeight/NUMBER_OF_PROCESSORS;
+		for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+			int h1 = i * delta;
+			int h2 = (i+1) * delta;
+			int startIndex = h1 * tgtWidth;
+			int endIndex =  h2 * tgtWidth;
+			double[] _minmax = {99999999, 0};
+			getMinmaxService[i] = new FindMaxMinThread(_minmax, startIndex, endIndex, this.getData());
+			getMinmaxThread[i] = new Thread(getMinmaxService[i]);
+			getMinmaxThread[i].start();
+		}
+		try{
+			for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+				getMinmaxThread[i].join();
+//				System.out.println(i + " Finished~");
 			}
-		}		
+		} catch (InterruptedException e){
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+			if(minmax[0] > getMinmaxService[i].getResult()[0])
+				minmax[0] = getMinmaxService[i].getResult()[0];
+			if(minmax[1] < getMinmaxService[i].getResult()[1])
+				minmax[1] = getMinmaxService[i].getResult()[1];
+		}
+
 	}
 	
 	public double[] getSize() {

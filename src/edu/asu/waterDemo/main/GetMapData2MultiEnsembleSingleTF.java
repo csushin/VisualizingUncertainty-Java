@@ -17,18 +17,17 @@ import org.glassfish.jersey.server.JSONP;
 import edu.asu.waterDemo.commonclasses.GenerateTiles;
 import edu.asu.waterDemo.commonclasses.LatLng;
 import edu.asu.waterDemo.commonclasses.TiffParser;
-import edu.asu.waterDemo.main.GetMapForOverview.DrawOverviewMapThreads;
-import edu.asu.waterDemo.main.GetMapForOverview.GetMapForOverviewBean;
 
 @Path("/getMapData2MultiEnsembleSingleTF")
 public class GetMapData2MultiEnsembleSingleTF {
 	private String basisDir;
 	private String targetPath;
-	private int NUMBER_OF_PROCESSORS = 30;
+	private int NUMBER_OF_PROCESSORS = 16;
 	private String metricDir;
 	
 	public class GetMapData2MultiEnsembleSingleTFBean{
 		public String imgStr;
+		public double[] minmax;
 	}
 	
 	@Context
@@ -84,9 +83,12 @@ public class GetMapData2MultiEnsembleSingleTF {
 	public GetMapData2MultiEnsembleSingleTFBean query(
 			@QueryParam("metricA") @DefaultValue("null") String metricA,
 			@QueryParam("metricB") @DefaultValue("null") String metricB,
+			@QueryParam("_metricA") @DefaultValue("null") String _metricA,
+			@QueryParam("_metricB") @DefaultValue("null") String _metricB,
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable,
-			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel){
+			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
+			@QueryParam("uniformRange") @DefaultValue("null") String uniformRange){
 		GetMapData2MultiEnsembleSingleTFBean result = new GetMapData2MultiEnsembleSingleTFBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
@@ -94,8 +96,6 @@ public class GetMapData2MultiEnsembleSingleTF {
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
 		this.targetPath = this.basisDir + _dataType + "/EnsembleStatOf" + metricB + "/" + metricA + "Of" + metricB + ".tif";
-			
-		
 		String imgPath = this.targetPath.replace(".tif", "_zoomLevel"+ zoomLevel +".png");
 		
 		
@@ -111,13 +111,23 @@ public class GetMapData2MultiEnsembleSingleTF {
 		File imgFile = new File(imgPath);
 		// look for base64 img string
 		// if the img already exists, then convert it to base64 and return the string
-		if(imgFile.exists()){
-			result.imgStr = tile.encodeFromReaderToBase64(imgPath, "PNG");
-			return result;
-		}
+//		if(imgFile.exists()){
+//			result.imgStr = tile.encodeFromReaderToBase64(imgPath, "PNG");
+//			return result;
+//		}
 		
 		double[] globalMinmax = new double[2];
 		globalMinmax = targetparser.getMinmax();
+		if(Boolean.valueOf(uniformRange)){
+			String _comparedFilePath = this.basisDir +  _dataType + "/EnsembleStatOf" + _metricB + "/" + _metricA + "Of" + _metricB + ".tif";
+			TiffParser comparedParser = new TiffParser(_comparedFilePath);
+			double[] comparedMinmax = comparedParser.getMinmax();
+			if(globalMinmax[0] > comparedMinmax[0])
+				globalMinmax[0] = comparedMinmax[0];
+			if(globalMinmax[1] < comparedMinmax[1])
+				globalMinmax[1] = comparedMinmax[1];
+		}
+		
 		
 		double[] _thresholds = new double[colortf.length-1];
 		for(int i=0; i<colortf.length-1; i++){
@@ -149,8 +159,10 @@ public class GetMapData2MultiEnsembleSingleTF {
 			e.printStackTrace();
 		}
 		
-		result.imgStr = tile.writeBufferImage();
 		
+		result.imgStr = tile.encodeFromBufferImgToBase64();
+//		result.imgStr = tile.writeBufferImage();
+		result.minmax = globalMinmax;
 		return result;
 	}
 }

@@ -17,7 +17,6 @@ import javax.ws.rs.core.Context;
 
 import org.glassfish.jersey.server.JSONP;
 
-import edu.asu.waterDemo.commonclasses.GetHistDataThread;
 import edu.asu.waterDemo.commonclasses.TiffParser;
 
 @Path("/getOtherStatsForSameMean")
@@ -183,7 +182,7 @@ public class GetEnsembleStatsByPoint {
 		    if(!existedKey)
 		    	distinctStats.put(stats, 1);
 		}
-		
+		System.out.println("distinctStats Finished!");
 		//	convert the distinct combinations into a Javascript friendly format	
 		HashMap<String, ArrayList<Double>> distinctStatsJS = new HashMap<String, ArrayList<Double>>();
 		Iterator it = distinctStats.entrySet().iterator();
@@ -200,6 +199,7 @@ public class GetEnsembleStatsByPoint {
 	    		distinctStatsJS.put(metrics[i], array);
 	    	}
 	    }
+	    System.out.println("dinstanceStatJS Finished!");
 	    result.selectedValue = value;
 	    result.locations = locations;
 	    result.distinctStatsJS = distinctStatsJS;
