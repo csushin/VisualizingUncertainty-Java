@@ -31,6 +31,7 @@ public class GetEnsembleStatsByPoint {
 		public HashMap<String, ArrayList<Double>> distinctStatsJS;
 		public ArrayList<double[]> locations;
 		public double selectedValue;
+		public ArrayList<Integer> distinctIndices;
 	}
 	
 	@Context
@@ -112,7 +113,7 @@ public class GetEnsembleStatsByPoint {
 		
 		// get the locations of points with similar values
 		ArrayList<Integer> indices = new ArrayList<Integer>();
-		ArrayList<double[]> locations = new ArrayList<double[]>();
+//		ArrayList<double[]> locations = new ArrayList<double[]>();
 		int tgtHeight = (int) tgtParser.getSize()[0];
 		int tgtWidth = (int) tgtParser.getSize()[1];
 		for(int hInd=0; hInd<tgtHeight; hInd++){
@@ -121,10 +122,10 @@ public class GetEnsembleStatsByPoint {
 				double _value = tgtParser.getData()[tgtIndex];
 				if(Math.abs(_value - value)<Double.valueOf(errorRange)){
 					indices.add(tgtIndex);
-					double _lat = tgtParser.getUlLatlng()[0] + hInd*tgtParser.getGeoInfo()[5];
-					double _lng = tgtParser.getUlLatlng()[1] + wInd*tgtParser.getGeoInfo()[1];
-					double[] _location = {_lat, _lng};
-					locations.add(_location);
+//					double _lat = tgtParser.getUlLatlng()[0] + hInd*tgtParser.getGeoInfo()[5];
+//					double _lng = tgtParser.getUlLatlng()[1] + wInd*tgtParser.getGeoInfo()[1];
+//					double[] _location = {_lat, _lng};
+//					locations.add(_location);
 				}
 				
 			}
@@ -162,6 +163,7 @@ public class GetEnsembleStatsByPoint {
 		
 		// to avoid the duplication, extract the distinct combinations of the stat values and their counts
 		HashMap<double[], Integer> distinctStats = new HashMap<double[], Integer>();
+		ArrayList<Integer> distinctIndices = new ArrayList<Integer>();
 		for(int i=0; i<indices.size(); i++){
 			double[] stats = new double[metrics.length];
 			for(int k=0; k<metrics.length; k++){
@@ -179,8 +181,10 @@ public class GetEnsembleStatsByPoint {
 		    		distinctStats.put(key, count);
 		    	}
 		    }
-		    if(!existedKey)
+		    if(!existedKey){
 		    	distinctStats.put(stats, 1);
+		    	distinctIndices.add(indices.get(i));
+		    }
 		}
 		System.out.println("distinctStats Finished!");
 		//	convert the distinct combinations into a Javascript friendly format	
@@ -201,7 +205,8 @@ public class GetEnsembleStatsByPoint {
 	    }
 	    System.out.println("dinstanceStatJS Finished!");
 	    result.selectedValue = value;
-	    result.locations = locations;
+	    result.distinctIndices = distinctIndices;
+//	    result.locations = locations;
 	    result.distinctStatsJS = distinctStatsJS;
 		result.distinctStats = distinctStats;
 		result.indices = indices;
