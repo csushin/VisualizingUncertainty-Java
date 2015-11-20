@@ -47,10 +47,15 @@ public class GetMatrixData {
 		public String modelName;
 		public int sampleIndex;
 		public double z_score; 
+		
+		public MatrixUnit(){
+			
+		}
 	}
 	
 	public class GetMatrixDataBean{
 		public ArrayList<MatrixUnit> data;
+		public HashMap<String, double[]> values;
 	}
 	
 	@Context
@@ -97,7 +102,7 @@ public class GetMatrixData {
 		private int startIndex;
 		private int endIndex;
 		private HashMap<String, double[]> values;
-		private ArrayList<MatrixUnit> data;
+		public ArrayList<MatrixUnit> data;
 		private TiffParser meanParser;
 		private TiffParser stdParser;
 		private String[] indicesStr;
@@ -117,17 +122,18 @@ public class GetMatrixData {
 			for(int i=startIndex; i<endIndex; i++){
 				double mean = this.meanParser.getData()[Integer.valueOf(this.indicesStr[i])];
 				double std = this.stdParser.getData()[Integer.valueOf(this.indicesStr[i])];
-				Iterator it = this.values.entrySet().iterator();
-			    while (it.hasNext()) {
-			    	MatrixUnit unit = new MatrixUnit();
-			        Map.Entry pair = (Map.Entry)it.next();
-			        unit.modelName = (String) pair.getKey();
-			        double[] values = (double[]) pair.getValue();
-			        unit.sampleIndex = Integer.valueOf(this.indicesStr[i]);
-			        unit.z_score = (values[i] - mean ) / std;
-			        this.data.add(unit);
-//			        it.remove(); // avoids a ConcurrentModificationException
-			    }
+				if(i == endIndex - 1)
+					System.out.println("i");
+				for(int j=0; j<MODELNAME.length; j++){
+					MatrixUnit unit = new MatrixUnit();
+					double[] values = this.values.get(MODELNAME[j]);
+					unit.modelName = MODELNAME[j];
+					unit.z_score = (values[i] - mean ) / std;
+					unit.sampleIndex = Integer.valueOf(this.indicesStr[i]);
+					this.data.set(i*MODELNAME.length + j, unit);
+					System.out.println(i*MODELNAME.length + j);
+					System.out.println(unit);
+				}
 			}
 			
 		}
@@ -175,17 +181,24 @@ public class GetMatrixData {
 		TiffParser meanparser = new TiffParser(meanParserPath);
 		String stdParserPath = this.basisDir + _dataType + "/EnsembleStatOf" + sourceDim + "/EnsembleStdOf" + sourceDim + ".tif";
 		TiffParser stdparser = new TiffParser(stdParserPath);
-		ArrayList<MatrixUnit> data = new ArrayList<MatrixUnit>();
+		result.data = new ArrayList<MatrixUnit>();
+		for(int i=0; i<indicesStr.length*MODELNAME.length; i++)
+			result.data.add(null);
 		int countPerThread = indicesStr.length / NUMBER_OF_PROCESSORS;
+		if(indicesStr.length <= NUMBER_OF_PROCESSORS){
+			NUMBER_OF_PROCESSORS = indicesStr.length;
+			countPerThread = 1;
+		}
 		CalcZScoreThread[] calcZScorethread = new CalcZScoreThread[NUMBER_OF_PROCESSORS];
 		Thread[] getCalcResultsThread = new Thread[NUMBER_OF_PROCESSORS];
 		for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
 			int startIndex = i*countPerThread;
 			int endIndex = (i+1)*countPerThread;
 			if(i == NUMBER_OF_PROCESSORS - 1)
-				endIndex = indicesStr.length - 1;
-			calcZScorethread[i] = new CalcZScoreThread(startIndex, endIndex, indicesStr, valuesPerModel, data, meanparser, stdparser);
+				endIndex = indicesStr.length;
+			calcZScorethread[i] = new CalcZScoreThread(startIndex, endIndex, indicesStr, valuesPerModel, result.data, meanparser, stdparser);
 			getCalcResultsThread[i] = new Thread(calcZScorethread[i]);
+			getCalcResultsThread[i].start();
 		}
 		try{
 			for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
@@ -197,14 +210,13 @@ public class GetMatrixData {
 			e.printStackTrace();
 		}
 		
-		result.data = data;
-		
+//		result.data = data;
+//		result.values = valuesPerModel;
 		return result;
 	}
 	
 	private String getAllFiles(String directoryName, String keyword) {
 	    File directory = new File(directoryName);
-	    System.out.println("directory Name: " + directoryName);
 	    // get all the files from a directory
 	    File[] fList = directory.listFiles();
 	    for (File file : fList) {

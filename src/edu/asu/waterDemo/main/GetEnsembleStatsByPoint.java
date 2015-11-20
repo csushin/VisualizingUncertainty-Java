@@ -113,7 +113,7 @@ public class GetEnsembleStatsByPoint {
 		
 		// get the locations of points with similar values
 		ArrayList<Integer> indices = new ArrayList<Integer>();
-//		ArrayList<double[]> locations = new ArrayList<double[]>();
+		ArrayList<double[]> locations = new ArrayList<double[]>();
 		int tgtHeight = (int) tgtParser.getSize()[0];
 		int tgtWidth = (int) tgtParser.getSize()[1];
 		for(int hInd=0; hInd<tgtHeight; hInd++){
@@ -122,22 +122,14 @@ public class GetEnsembleStatsByPoint {
 				double _value = tgtParser.getData()[tgtIndex];
 				if(Math.abs(_value - value)<Double.valueOf(errorRange)){
 					indices.add(tgtIndex);
-//					double _lat = tgtParser.getUlLatlng()[0] + hInd*tgtParser.getGeoInfo()[5];
-//					double _lng = tgtParser.getUlLatlng()[1] + wInd*tgtParser.getGeoInfo()[1];
-//					double[] _location = {_lat, _lng};
-//					locations.add(_location);
+					double _lat = tgtParser.getUlLatlng()[0] + hInd*tgtParser.getGeoInfo()[5];
+					double _lng = tgtParser.getUlLatlng()[1] + wInd*tgtParser.getGeoInfo()[1];
+					double[] _location = {_lat, _lng};
+					locations.add(_location);
 				}
 				
 			}
 		}
-//		for(int i=0; i<tgtParser.getSize()[1]*; i++){
-//			double _value = tgtParser.getData()[i];
-//			if(Math.abs(_value - value)<Double.valueOf(errorRange)){
-//				indices.add(i);
-//				double lat = (int) ((Double.valueOf(lat) - tgtParser.getUlLatlng()[0])/tgtParser.getGeoInfo()[5]);
-//				double lng = (int) ((Double.valueOf(lng) - tgtParser.getUlLatlng()[1])/tgtParser.getGeoInfo()[1]);
-//			}
-//		}
 		
 		// get other stat values
 		String[] metrics = metricList.split(",");
@@ -206,7 +198,7 @@ public class GetEnsembleStatsByPoint {
 	    System.out.println("dinstanceStatJS Finished!");
 	    result.selectedValue = value;
 	    result.distinctIndices = distinctIndices;
-//	    result.locations = locations;
+	    result.locations = locations;
 	    result.distinctStatsJS = distinctStatsJS;
 		result.distinctStats = distinctStats;
 		result.indices = indices;
