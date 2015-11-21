@@ -115,6 +115,8 @@ public class GetMapData2MultiEnsembleStd {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		this.xmetricDir = this.basisDir + _dataType + "/GlobalStat/" + xmetric + ".tif";
 		String comparedXDir = this.basisDir + dataType + "/EnsembleStatOf" + ymetricB + "/" + "EnsembleStdOf" + ymetricB + ".tif";
 		this.ymetricDir = this.basisDir + _dataType + "/EnsembleStatOf" + ymetricB + "/" + ymetricA + "Of" + ymetricB + ".tif";

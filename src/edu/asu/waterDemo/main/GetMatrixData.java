@@ -1,23 +1,32 @@
 package edu.asu.waterDemo.main;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-
-import org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.core.Response;
 
 import edu.asu.waterDemo.commonclasses.TiffParser;
 
+import org.json.JSONObject;
 
 @Path("/getMatrixData")
 public class GetMatrixData {
@@ -42,6 +51,12 @@ public class GetMatrixData {
 			    "NOAA-GFDL-GFDL-ESM2M_SMHI-RCA4"};
 	
 	private int NUMBER_OF_PROCESSORS = MODELNAME.length;
+	
+	public class requestedDataClass{
+		public String[] indices;
+		public String sourceDim;
+		public String dataType;
+	}
 	
 	public class MatrixUnit{
 		public String modelName;
@@ -131,8 +146,8 @@ public class GetMatrixData {
 					unit.z_score = (values[i] - mean ) / std;
 					unit.sampleIndex = Integer.valueOf(this.indicesStr[i]);
 					this.data.set(i*MODELNAME.length + j, unit);
-					System.out.println(i*MODELNAME.length + j);
-					System.out.println(unit);
+//					System.out.println(i*MODELNAME.length + j);
+//					System.out.println(unit);
 				}
 			}
 			
@@ -140,21 +155,36 @@ public class GetMatrixData {
 		
 	}
 	
-	@GET
-	@JSONP(queryParam = "callback", callback = "eval")
-	@Produces({"application/x-javascript"})
+	@POST
+//	@JSONP(queryParam = "callback", callback = "eval")
+	@Produces({"application/json"})
 	public GetMatrixDataBean query(
-			@QueryParam("indices") @DefaultValue("null") String indices,
-			@QueryParam("sourceDim") @DefaultValue("null") String sourceDim,
-			@QueryParam("dataType") @DefaultValue("null") String dataType){
+			InputStream incomingData) throws IOException{
 		GetMatrixDataBean result = new GetMatrixDataBean();
-		String[] indicesStr = indices.split(",");
+		System.out.println(incomingData);
+		String incomingString = "";
+		InputStreamReader crunchifyReader = new InputStreamReader(incomingData);
+		BufferedReader br = new BufferedReader(crunchifyReader);
+		String line;
+		while ((line = br.readLine()) != null) {
+			incomingString += line + "\n";
+		}
+		String[] stringarray = incomingString.split("\"");
+//		System.out.println("0: "+ stringarray[0]);
+//		System.out.println("1:"+ stringarray[1]);
+//		System.out.println("2: "+ stringarray[2]);
+//		System.out.println("3: "+ stringarray[3]);
+		String[] indicesStr = stringarray[3].split(",");
 		String basis = "";
+		String sourceDim = stringarray[7];
+		String dataType = stringarray[11];
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		basis = this.basisDir + _dataType + "/" + sourceDim + "/";
 		GetModelStatsThread[] getModelStatsService = new GetModelStatsThread[NUMBER_OF_PROCESSORS];
 		Thread[]  getModelStatsThread = new Thread[NUMBER_OF_PROCESSORS];
@@ -211,8 +241,10 @@ public class GetMatrixData {
 		}
 		
 //		result.data = data;
-//		result.values = valuesPerModel;
+		result.values = valuesPerModel;
 		return result;
+		
+//		return Response.status(200).entity(result.toString()).build();
 	}
 	
 	private String getAllFiles(String directoryName, String keyword) {

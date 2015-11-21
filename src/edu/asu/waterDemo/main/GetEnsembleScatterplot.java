@@ -53,6 +53,8 @@ public class GetEnsembleScatterplot {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		String basisDir =  this.basisDir + _dataType + "/SpatialStat/";
 		files = getAllFiles(basisDir, files);
 		String[] histData = new String[files.size()];

@@ -37,7 +37,15 @@ public class GenerateTiles {
 	private Point pixelSW;
 	private Point pixelNE;
 	private String type;
+	private int alpha;
 
+	public int getAlpha() {
+		return alpha;
+	}
+
+	public void setAlpha(int alpha) {
+		this.alpha = alpha;
+	}
 
 	private int zoomLevel;
 	public static int INFINITE = -99999;
@@ -252,6 +260,9 @@ public class GenerateTiles {
 		}
 		else if(this.getType().equals("treeVis") || this.getType().equals("fuzzyThresholdVis") || this.getType().equals("overviewVis")){
 			result = 255;
+		}
+		else if(this.getType().equals("EnsembleSingleTF")){
+			result = this.alpha;
 		}
 		else{
 			System.out.println("Cannot recognize the input type in mapping alpha value during the generation of tiles!");

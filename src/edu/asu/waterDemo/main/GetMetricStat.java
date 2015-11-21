@@ -50,7 +50,14 @@ public class GetMetricStat {
 			@QueryParam("type") @DefaultValue("null") String type,
 			@QueryParam("dataType") @DefaultValue("") String dataType) {
 		StatBean result = new StatBean();
-		this.metricDir = this.preCalcDir + dataType + "/" + metric + File.separatorChar;
+		String _dataType = dataType;
+		if(dataType.equals("Precipitation"))
+			_dataType = "pr_HIST";
+		if(dataType.equals("TemperatureMin"))
+			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
+		this.metricDir = this.preCalcDir + _dataType + "/" + metric + File.separatorChar;
 		if(type.contains("Modal") && metric.contains("Modal"))
 			this.targetFile = getAllFiles(this.metricDir, year);
 		if(type.contains("Time") && metric.contains("Time"))

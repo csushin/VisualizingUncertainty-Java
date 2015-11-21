@@ -99,6 +99,8 @@ public class GetMapForOverview {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		this.metricDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
 		if(dataType.equalsIgnoreCase("Ensemble")){
 			String _variable = variable;
@@ -106,6 +108,8 @@ public class GetMapForOverview {
 				_variable = "pr_HIST";
 			if(variable.equals("TemperatureMin"))
 				_variable = "tasmin_HIST";
+			if(variable.equals("TemperatureMax"))
+				_variable = "tasmax_HIST";
 			this.metricDir = this.basisDir + _variable + "/EnsembleStatOfTimeMean/";
 			this.targetPath = this.metricDir + "Ensemble" + metricType + "OfTimeMean.tif";
 		}

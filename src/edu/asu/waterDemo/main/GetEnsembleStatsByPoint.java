@@ -99,6 +99,8 @@ public class GetEnsembleStatsByPoint {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		String targetPath = this.basisDir + _dataType + "/" + "EnsembleStatOf"+ srcTypeB + "/" + srcTypeA + "Of" + srcTypeB + ".tif";
 		// get the pointed value
 		TiffParser tgtParser = new TiffParser(targetPath);

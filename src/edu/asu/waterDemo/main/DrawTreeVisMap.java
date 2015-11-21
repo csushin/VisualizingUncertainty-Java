@@ -72,6 +72,13 @@ public class DrawTreeVisMap {
 //		note that the order of the threshold and levels should be the consistent
 		imgBase64 result = new imgBase64();
 		result.imgStr = "test";		
+		String _dataType = dataType;
+		if(dataType.equals("Precipitation"))
+			_dataType = "pr_HIST";
+		if(dataType.equals("TemperatureMin"))
+			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		JSONObject tfFuncJson = (JSONObject)new JSONParser().parse(tffunction);
 		String[] levelsArr = levels.split(",");
 		String[] _thresholdsArr = thresholds.split(",");
@@ -92,7 +99,7 @@ public class DrawTreeVisMap {
 		ArrayList<TiffParser> parsers = new ArrayList<TiffParser>();
 		
 		for(int i=1; i<levelsArr.length; i++){
-			String dir = this.preCalcDir + dataType + "/" + levelsArr[i].replace(" ", "") + File.separatorChar;
+			String dir = this.preCalcDir + _dataType + "/" + levelsArr[i].replace(" ", "") + File.separatorChar;
 			String filePath = getAllFiles(dir, treeTypeKeyword);
 			parsers.add(new TiffParser(filePath));
 		}

@@ -114,6 +114,8 @@ public class GetEnsembleHistByPoint {
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		String xTargetPath = this.basisDir + _dataType + "/" + "EnsembleStatOfTimeMean/Ensemble" + xmetric + "OfTimeMean.tif";
 		String yTargetPath = this.basisDir + _dataType + "/" + "EnsembleStatOfTimeMean/Ensemble" + ymetric + "OfTimeMean.tif";
 		TiffParser xTgtParser = new TiffParser(xTargetPath);

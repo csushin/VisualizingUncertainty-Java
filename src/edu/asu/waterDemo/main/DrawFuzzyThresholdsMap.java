@@ -88,7 +88,14 @@ public class DrawFuzzyThresholdsMap {
 			@QueryParam("zoomLevel") @DefaultValue("7") int zoomLevel,
 			@QueryParam("dataType") @DefaultValue("") String dataType){
 		imgBase64 result = new imgBase64();
-		this.targetDir = getAllFiles(this.basisDir + dataType + "/" + modaltype + File.separatorChar, keywords);
+		String _dataType = dataType;
+		if(dataType.equals("Precipitation"))
+			_dataType = "pr_HIST";
+		if(dataType.equals("TemperatureMin"))
+			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
+		this.targetDir = getAllFiles(this.basisDir + _dataType + "/" + modaltype + File.separatorChar, keywords);
 		TiffParser targetParser = new TiffParser(this.targetDir);
 		String[] thresholdStr=  thresholds.split("&");
 		double[] thresholdArr = new double[thresholdStr.length];

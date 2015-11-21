@@ -88,13 +88,16 @@ public class GetMapData2MultiEnsembleSingleTF {
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable,
 			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
-			@QueryParam("uniformRange") @DefaultValue("null") String uniformRange){
+			@QueryParam("uniformRange") @DefaultValue("null") String uniformRange,
+			@QueryParam("alpha") @DefaultValue("null") String alpha){
 		GetMapData2MultiEnsembleSingleTFBean result = new GetMapData2MultiEnsembleSingleTFBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
 			_dataType = "pr_HIST";
 		if(dataType.equals("TemperatureMin"))
 			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
 		this.targetPath = this.basisDir + _dataType + "/EnsembleStatOf" + metricB + "/" + metricA + "Of" + metricB + ".tif";
 		String imgPath = this.targetPath.replace(".tif", "_zoomLevel"+ zoomLevel +".png");
 		
@@ -102,12 +105,13 @@ public class GetMapData2MultiEnsembleSingleTF {
 		TiffParser targetparser = new TiffParser(this.targetPath);
 		String[] colortf = colorTable.split("&");
 		
-		GenerateTiles tile = new GenerateTiles(imgPath, null, "overviewVis", Integer.valueOf(zoomLevel), colortf);
+		GenerateTiles tile = new GenerateTiles(imgPath, null, "EnsembleSingleTF", Integer.valueOf(zoomLevel), colortf);
 		double[] size = targetparser.getSize();
 		LatLng southwest = new LatLng(targetparser.getLrLatlng()[0], targetparser.getUlLatlng()[1]);
 		LatLng northeast = new LatLng(targetparser.getUlLatlng()[0], targetparser.getLrLatlng()[1]);
 		tile.processWidthHeight((int) size[1], (int) size[0], southwest, northeast);
 		tile.initializeBufferImage();
+		tile.setAlpha(Integer.valueOf(alpha));
 		File imgFile = new File(imgPath);
 		// look for base64 img string
 		// if the img already exists, then convert it to base64 and return the string

@@ -59,8 +59,15 @@ public class CorrelateStats {
 			keyword = year;
 		else
 			keyword = modal;
-		this.metricXPath = getAllFiles(this.basisDir + dataType + "/"  + metricX + File.separatorChar, keyword);
-		this.metricYPath = getAllFiles(this.basisDir + dataType + "/"  + metricY + File.separatorChar, keyword);
+		String _dataType = dataType;
+		if(dataType.equals("Precipitation"))
+			_dataType = "pr_HIST";
+		if(dataType.equals("TemperatureMin"))
+			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
+		this.metricXPath = getAllFiles(this.basisDir + _dataType + "/"  + metricX + File.separatorChar, keyword);
+		this.metricYPath = getAllFiles(this.basisDir + _dataType + "/"  + metricY + File.separatorChar, keyword);
 		TiffParser xParser = new TiffParser(this.metricXPath);
 		TiffParser yParser = new TiffParser(this.metricYPath);
 		double[] xMinMax = new double[2];
