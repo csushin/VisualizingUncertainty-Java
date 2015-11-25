@@ -141,7 +141,14 @@ public class GetMapForOverview {
 		
 		String sourceDir = this.basisDir + _dataType + "/" + modalType + metricType + File.separatorChar;
 		double[] globalMinmax = {999999999,0};
-		globalMinmax = targetparser.getMinmax();
+		if(min!=null && max!=null && !dataType.contains("Ensemble")){
+			globalMinmax[0] = Double.valueOf(min);
+			globalMinmax[1] = Double.valueOf(max);
+		}
+		else{
+			globalMinmax = targetparser.getMinmax();
+		}
+		
 //		if(dataType.equalsIgnoreCase("Ensemble")){
 //			globalMinmax = targetparser.getMinmax();
 //		}else{

@@ -57,7 +57,9 @@ public class GetHistDataForOverview {
 			@QueryParam("type") @DefaultValue("null") String type,
 			@QueryParam("key") @DefaultValue("null") String key,
 			@QueryParam("binSize") @DefaultValue("null") String binSize,
-			@QueryParam("variable") @DefaultValue("null") String variable) throws IOException{
+			@QueryParam("variable") @DefaultValue("null") String variable,
+			@QueryParam("min") @DefaultValue("null") String min,
+			@QueryParam("max") @DefaultValue("null") String max) throws IOException{
 		HistDataBean result = new HistDataBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
@@ -99,20 +101,20 @@ public class GetHistDataForOverview {
 			    }
 			    String[] everything = sb.toString().split(" ");
 			    double[] hist = new double[everything.length];
-			    double min = 99999999;
-			    double max = 0;
+			    double areamin = 99999999;
+			    double areamax = 0;
 			    for(int i=0; i<everything.length; i++){
 			    	hist[i] = Double.valueOf(everything[i]);
-			    	if(max<Double.valueOf(everything[i]))
-			    		max = Double.valueOf(everything[i]);
-			    	if(min>Double.valueOf(everything[i]))
-			    		min = Double.valueOf(everything[i]);
+			    	if(areamax<Double.valueOf(everything[i]))
+			    		areamax = Double.valueOf(everything[i]);
+			    	if(areamin>Double.valueOf(everything[i]))
+			    		areamin = Double.valueOf(everything[i]);
 			    }
 			    result.hist = hist;
 				result.metric = metricType;
 				result.data = dataType;
-				result.min = min;
-				result.max = max;
+				result.min = areamin;
+				result.max = areamax;
 			} finally {
 			    br.close();
 			}
@@ -123,7 +125,13 @@ public class GetHistDataForOverview {
 		TiffParser targetparser = new TiffParser(this.targetFile);
 //		double[] MinMax = targetparser.getMinmax();
 		double[] globalMinmax = {999999999, 0};
-		globalMinmax = targetparser.getMinmax();
+		if(min!=null && max!=null && !dataType.contains("Ensemble")){
+			globalMinmax[0] = Double.valueOf(min);
+			globalMinmax[1] = Double.valueOf(max);
+		}
+		else{
+			globalMinmax = targetparser.getMinmax();
+		}
 //		if(dataType.equalsIgnoreCase("Ensemble")){
 //			globalMinmax = targetparser.getMinmax();
 //		}else{

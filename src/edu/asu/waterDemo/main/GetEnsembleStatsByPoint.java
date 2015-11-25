@@ -27,12 +27,25 @@ public class GetEnsembleStatsByPoint {
 	public class GetEnsembleStatsByPointBean{
 		public HashMap<String, double[]> values;
 		public ArrayList<Integer> indices;
-		public HashMap<double[], Integer> distinctStats;
+		public ArrayList<DistinctStat2Amount> distinctStats;
 		public HashMap<String, ArrayList<Double>> distinctStatsJS;
 		public ArrayList<double[]> locations;
 		public double selectedValue;
 		public ArrayList<Integer> distinctIndices;
+		public int totalAmount = 0;
+//		public ArrayList<Location> distinctLocations;
 	}
+	
+	public class DistinctStat2Amount{
+		public double[] stats;
+		public int amount;
+		public DistinctStat2Amount(double[] stats, int amount) {
+			this.stats = stats;
+			this.amount = amount;
+		}
+	}
+	
+
 	
 	@Context
 	public void setServletContext(ServletContext context) {
@@ -124,10 +137,10 @@ public class GetEnsembleStatsByPoint {
 				double _value = tgtParser.getData()[tgtIndex];
 				if(Math.abs(_value - value)<Double.valueOf(errorRange)){
 					indices.add(tgtIndex);
-					double _lat = tgtParser.getUlLatlng()[0] + hInd*tgtParser.getGeoInfo()[5];
-					double _lng = tgtParser.getUlLatlng()[1] + wInd*tgtParser.getGeoInfo()[1];
-					double[] _location = {_lat, _lng};
-					locations.add(_location);
+//					double _lat = tgtParser.getUlLatlng()[0] + hInd*tgtParser.getGeoInfo()[5];
+//					double _lng = tgtParser.getUlLatlng()[1] + wInd*tgtParser.getGeoInfo()[1];
+//					double[] _location = {_lat, _lng};
+//					locations.add(_location);
 				}
 				
 			}
@@ -156,54 +169,71 @@ public class GetEnsembleStatsByPoint {
 		}
 		
 		// to avoid the duplication, extract the distinct combinations of the stat values and their counts
-		HashMap<double[], Integer> distinctStats = new HashMap<double[], Integer>();
+		ArrayList<DistinctStat2Amount> distinctStats = new ArrayList<DistinctStat2Amount>();
+//		ArrayList<Location> distinctLocations = new ArrayList<Location>();
 		ArrayList<Integer> distinctIndices = new ArrayList<Integer>();
 		for(int i=0; i<indices.size(); i++){
 			double[] stats = new double[metrics.length];
 			for(int k=0; k<metrics.length; k++){
 				stats[k] = result.values.get(metrics[k])[i];
-			}			
-			Iterator it = distinctStats.entrySet().iterator();
-			boolean existedKey = false;
-		    while (it.hasNext()) {
-		    	Map.Entry pair = (Map.Entry)it.next();
-		    	double[] key = (double[]) pair.getKey();
-		    	if(Arrays.equals(key, stats)){
-		    		int count = (int) pair.getValue();
-		    		existedKey = true;
-		    		count++;
-		    		distinctStats.put(key, count);
-		    	}
-		    }
-		    if(!existedKey){
-		    	distinctStats.put(stats, 1);
-		    	distinctIndices.add(indices.get(i));
-		    }	
+			}	
+			if(distinctStats.size() == 0){
+				DistinctStat2Amount element = new DistinctStat2Amount(stats, 1);
+				distinctStats.add(element);
+				distinctIndices.add(indices.get(i));
+			}
+			else{
+				boolean existedKey = false;
+				for(int j=0; j<distinctStats.size(); j++){
+					double[] existedStats = distinctStats.get(j).stats;
+					if(Arrays.equals(existedStats, stats)){
+			    		distinctStats.get(j).amount+=1;
+			    		existedKey = true;
+			    	}
+				}
+			    if(!existedKey){
+			    	DistinctStat2Amount element = new DistinctStat2Amount(stats, 1);
+					distinctStats.add(element);
+			    	distinctIndices.add(indices.get(i));
+			    }	
+			}
 		}
 		System.out.println("distinctStats Finished!");
 		//	convert the distinct combinations into a Javascript friendly format	
 		HashMap<String, ArrayList<Double>> distinctStatsJS = new HashMap<String, ArrayList<Double>>();
-		Iterator it = distinctStats.entrySet().iterator();
-		boolean existedKey = false;
-	    while (it.hasNext()) {
-	    	Map.Entry pair = (Map.Entry)it.next();
-	    	double[] key = (double[]) pair.getKey();
-	    	for(int i=0; i<metrics.length; i++){
-	    		ArrayList<Double> array = new ArrayList<Double>();
-	    		if(distinctStatsJS.containsKey(metrics[i])){
-	    			array = distinctStatsJS.get(metrics[i]);
-	    		}
-	    		array.add(key[i]);
-	    		distinctStatsJS.put(metrics[i], array);
-	    	}
-	    }
+		for(int i=0; i<distinctStats.size(); i++){
+			for(int j=0; j<metrics.length; j++){
+				ArrayList<Double> array = new ArrayList<Double>();
+				if(distinctStatsJS.containsKey(metrics[j])){
+					array = distinctStatsJS.get(metrics[j]);
+				}
+				array.add(distinctStats.get(i).stats[j]);
+				distinctStatsJS.put(metrics[j], array);
+			}
+		}
+//		Iterator it = distinctStats.entrySet().iterator();
+//		boolean existedKey = false;
+//	    while (it.hasNext()) {
+//	    	Map.Entry pair = (Map.Entry)it.next();
+//	    	double[] key = (double[]) pair.getKey();
+//	    	for(int i=0; i<metrics.length; i++){
+//	    		ArrayList<Double> array = new ArrayList<Double>();
+//	    		if(distinctStatsJS.containsKey(metrics[i])){
+//	    			array = distinctStatsJS.get(metrics[i]);
+//	    		}
+//	    		array.add(key[i]);
+//	    		distinctStatsJS.put(metrics[i], array);
+//	    	}
+//	    }
 	    System.out.println("dinstanceStatJS Finished!");
+	    result.totalAmount = indices.size();
 	    result.selectedValue = value;
 	    result.distinctIndices = distinctIndices;
-	    result.locations = locations;
+//	    result.distinctLocations = distinctLocations;
+//	    result.locations = locations;
 	    result.distinctStatsJS = distinctStatsJS;
 		result.distinctStats = distinctStats;
-		result.indices = indices;
+//		result.indices = indices;
 		return result;
 	}
 	

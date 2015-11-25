@@ -52,6 +52,16 @@ public class GetMatrixData {
 	
 	private int NUMBER_OF_PROCESSORS = MODELNAME.length;
 	
+	public class Location {
+		public double lat;
+		public double lng;
+		
+		public Location(double lat, double lng){
+			this.lat = lat;
+			this.lng = lng;
+		}
+	}
+	
 	public class requestedDataClass{
 		public String[] indices;
 		public String sourceDim;
@@ -62,7 +72,7 @@ public class GetMatrixData {
 		public String modelName;
 		public int sampleIndex;
 		public double z_score; 
-		
+		public Location location;
 		public MatrixUnit(){
 			
 		}
@@ -137,6 +147,8 @@ public class GetMatrixData {
 			for(int i=startIndex; i<endIndex; i++){
 				double mean = this.meanParser.getData()[Integer.valueOf(this.indicesStr[i])];
 				double std = this.stdParser.getData()[Integer.valueOf(this.indicesStr[i])];
+				double lat = (int)Integer.valueOf(this.indicesStr[i])/this.meanParser.getSize()[1] * this.meanParser.getGeoInfo()[5] + this.meanParser.getUlLatlng()[0];
+				double lng = (int)Integer.valueOf(this.indicesStr[i])%this.meanParser.getSize()[1] * this.meanParser.getGeoInfo()[1] + this.meanParser.getUlLatlng()[1];
 				if(i == endIndex - 1)
 					System.out.println("i");
 				for(int j=0; j<MODELNAME.length; j++){
@@ -146,8 +158,8 @@ public class GetMatrixData {
 					unit.z_score = (values[i] - mean ) / std;
 					unit.sampleIndex = Integer.valueOf(this.indicesStr[i]);
 					this.data.set(i*MODELNAME.length + j, unit);
-//					System.out.println(i*MODELNAME.length + j);
-//					System.out.println(unit);
+					Location loc = new Location(lat, lng);
+					unit.location = loc;
 				}
 			}
 			
