@@ -3,6 +3,7 @@ package edu.asu.waterDemo.main;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -14,8 +15,8 @@ import javax.ws.rs.core.Context;
 
 import org.glassfish.jersey.server.JSONP;
 
+
 import edu.asu.waterDemo.commonclasses.TiffParser;
-import edu.asu.waterDemo.main.GetMatrixData.GetModelStatsThread;
 
 @Path("/getMultiScatterPlotData")
 public class GetMultiScatterPlotData {
@@ -54,8 +55,9 @@ public class GetMultiScatterPlotData {
 			for(int i=0; i<width*height; i++){
 				double value = parser.getData()[i];
 				if(!Double.isNaN(value) && value!=-1){
-					int _value = (int) Math.floor(this.unitSize*(value-MinMax[0])/(MinMax[1]-MinMax[0]));
-					this.result.get(i).values[this.metricIndex] = _value;
+//					int _value = (int) Math.floor(this.unitSize*(value-MinMax[0])/(MinMax[1]-MinMax[0]));
+//					double _value = (value-MinMax[0])/(MinMax[1]-MinMax[0]);
+					this.result.get(i).values[this.metricIndex] = value;
 					if(this.result.get(i).amount == 0)
 						this.result.get(i).amount = 1;
 				}
@@ -63,6 +65,50 @@ public class GetMultiScatterPlotData {
 		}
 	}
 	
+	
+	public class FoundUniqueData implements Runnable{
+		public ArrayList<ScatterMatrixUnit> sourceData;
+		public ArrayList<ScatterMatrixUnit> result;
+		public int startIndex;
+		public int endIndex;
+		
+		public FoundUniqueData(ArrayList<ScatterMatrixUnit> result, ArrayList<ScatterMatrixUnit> sourceData, int start, int end){
+			this.sourceData = sourceData;
+			this.result = result;
+			this.startIndex = start;
+			this.endIndex = end;
+		}
+		
+		public ArrayList<ScatterMatrixUnit> getResult(){
+			return this.result;
+		}
+		
+		@Override
+		public void run() {
+			for(int i=this.startIndex; i<this.endIndex; i++){
+				if(this.sourceData.get(i).amount != 0){
+					double[] values = this.sourceData.get(i).values;
+					if(this.result.size() == 0)
+						this.result.add(this.sourceData.get(i));
+					else{
+						boolean existedValue = false;
+						for(int j=0; j<this.result.size(); j++){
+							double[] _uniqueKey = this.result.get(j).values;
+							if(Arrays.equals(_uniqueKey, values)){
+								this.result.get(j).amount++;
+								existedValue = true;
+								break;
+							}
+						}
+						if(!existedValue){
+							this.result.add(this.sourceData.get(i));
+						}
+					}					
+				}
+			}
+		}
+		
+	}
 	@Context
 	public void setServletContext(ServletContext context) {
 		String osName = System.getProperty("os.name");
@@ -77,10 +123,10 @@ public class GetMultiScatterPlotData {
 	@GET
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
-	public void query(
+	public ArrayList<ScatterMatrixUnit> query(
 			@QueryParam("unitSize") @DefaultValue("null") String unitSize,
 			@QueryParam("metrics") @DefaultValue("null") String metrics,
-			@QueryParam("type") @DefaultValue("null") String dataType){
+			@QueryParam("dataType") @DefaultValue("null") String dataType){
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
 			_dataType = "pr_HIST";
@@ -99,7 +145,7 @@ public class GetMultiScatterPlotData {
 		ConvertValue2Pixel[] convert2intService = new ConvertValue2Pixel[metricList.length];
 		Thread[]  convert2intThread = new Thread[metricList.length];
 		for(int i=0; i<metricList.length; i++){
-			String path = this.basisDir + "EnsembleMeanOfTimeStat/Ensemble"+metricList[i]+"TimeMean.tif";
+			String path = this.basisDir + _dataType+ "/EnsembleStatOfTimeMean/Ensemble"+metricList[i]+"OfTimeMean.tif";
 			convert2intService[i] = new ConvertValue2Pixel(roundData, path, i, Integer.valueOf(unitSize));
 			convert2intThread[i] = new Thread(convert2intService[i]);
 			convert2intThread[i].start();
@@ -107,22 +153,86 @@ public class GetMultiScatterPlotData {
 		try{
 			for(int i=0; i<metricList.length; i++){
 				convert2intThread[i].join();
-				System.out.println("GetModelStat: " + i + " Finished~");
+				System.out.println("GetEnsembleStat: " + i + " Finished~");
 			}
 		} catch (InterruptedException e){
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
+		FoundUniqueData[] foundUniqueDataService = new FoundUniqueData[NUMBER_OF_PROCESSORS];
+		Thread[] foundUniqueDataThread = new Thread[NUMBER_OF_PROCESSORS];
+		int delta = roundData.size() / NUMBER_OF_PROCESSORS;
+		ArrayList<ScatterMatrixUnit> subFinalResult = new ArrayList<ScatterMatrixUnit>();
+		for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+			ArrayList<ScatterMatrixUnit> subresult = new ArrayList<ScatterMatrixUnit>();
+			int startIndex = i*delta;
+			int endIndex = (i+1)*delta;
+			if(i == NUMBER_OF_PROCESSORS - 1)
+				endIndex = roundData.size() - 1;
+			foundUniqueDataService[i] = new FoundUniqueData(subresult, roundData, startIndex, endIndex);
+			foundUniqueDataThread[i] = new Thread(foundUniqueDataService[i]);
+			foundUniqueDataThread[i].start();
+		}
+		try{
+			for(int i=0; i<NUMBER_OF_PROCESSORS; i++){
+				foundUniqueDataThread[i].join();
+				if(subFinalResult.size() == 0)
+					subFinalResult = foundUniqueDataService[i].getResult();
+				else
+					subFinalResult.addAll(foundUniqueDataService[i].getResult());
+				System.out.println("FoundUnique: " + i + " Finished~");
+			}
+		} catch(InterruptedException e){
+			e.printStackTrace();
+		}
+		
 		ArrayList<ScatterMatrixUnit> uniqueData = new ArrayList<ScatterMatrixUnit>();
-		for(int i=0; i<roundData.size(); i++){
-			if(roundData.get(i).amount!=0){
-				double[] roundValues = roundData.get(i).values;
-				if(uniqueData.size() == 0)
-					uniqueData.add(roundData.get(i));
+		for(int i=0; i<subFinalResult.size(); i++){
+//			if(subFinalResult.get(i).amount!=0)
+//				System.out.println(i);
+			double[] subValues = subFinalResult.get(i).values;
+			if(uniqueData.size() == 0)
+				uniqueData.add(subFinalResult.get(i));
+			else{
+				boolean existedValue = false;
+				for(int j=0; j<uniqueData.size(); j++){
+					double[] _subValues = uniqueData.get(j).values;
+					if(Arrays.equals(_subValues, subValues)){
+						uniqueData.get(j).amount += subFinalResult.get(i).amount;
+						existedValue = true;
+//						break;
+					}
+				}
+				if(!existedValue){
+					uniqueData.add(subFinalResult.get(i));
+				}
 			}
 		}
-//		return result;
+		
+//		ArrayList<ScatterMatrixUnit> uniqueData = new ArrayList<ScatterMatrixUnit>();
+//		for(int i=0; i<roundData.size(); i++){
+//			if(roundData.get(i).amount!=0){
+//				double[] roundValues = roundData.get(i).values;
+//				if(uniqueData.size() == 0)
+//					uniqueData.add(roundData.get(i));
+//				else{
+//					boolean existedValue = false;
+//					for(int j=0; j<uniqueData.size(); j++){
+//						double[] _uniqueKey = uniqueData.get(j).values;
+//						if(Arrays.equals(_uniqueKey, roundValues)){
+//							uniqueData.get(j).amount++;
+//							existedValue = true;
+////							break;
+//						}
+//					}
+//					if(!existedValue){
+//						uniqueData.add(roundData.get(i));
+//					}
+//				}
+//			}
+//		}
+		return uniqueData;
 	}
 
 }
