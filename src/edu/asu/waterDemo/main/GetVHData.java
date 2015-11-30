@@ -47,13 +47,15 @@ public class GetVHData {
 		public int startIndex;
 		public int endIndex;
 		public TiffParser parser;
+		public String scale;
 		public ArrayList<VHDataUnit> result;
 			
-		public CalcGradientService(int startIndex, int endIndex, TiffParser parser, ArrayList<VHDataUnit> result){
+		public CalcGradientService(int startIndex, int endIndex, TiffParser parser, ArrayList<VHDataUnit> result, String scale){
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.parser = parser;
 			this.result = result;
+			this.scale = scale;
 		}
 
 		@Override
@@ -77,6 +79,12 @@ public class GetVHData {
 					rightVal = this.parser.getData()[right];
 					topVal = this.parser.getData()[top];
 					bottomVal = this.parser.getData()[bottom];
+					if(this.scale.equals("true")){
+						leftVal = Math.log(leftVal);
+						rightVal = Math.log(rightVal);
+						topVal = Math.log(topVal);
+						bottomVal = Math.log(bottomVal);
+					}
 					if(ReasonableValue(leftVal) && ReasonableValue(rightVal)
 							&& ReasonableValue(topVal) && ReasonableValue(bottomVal)){
 						double gradient_x = (rightVal - leftVal)/2.0;
@@ -147,7 +155,8 @@ public class GetVHData {
 	public ArrayList<VHDataUnit> query(
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("dataLevel") @DefaultValue("null") String dataLevel,
-			@QueryParam("dataNameKeyword") @DefaultValue("null") String dataNameKeyword){
+			@QueryParam("dataNameKeyword") @DefaultValue("null") String dataNameKeyword,
+			@QueryParam("scale") @DefaultValue("null") String scale){
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
 			_dataType = "pr_HIST";
@@ -166,7 +175,7 @@ public class GetVHData {
 			int endIndex = (m+1)*delta;
 			if(m == NUMBER_OF_PROCESSORS - 1)
 				endIndex = (int) (targetParser.getSize()[0]*targetParser.getSize()[1] - 1);
-			CalcGradientServices[m] = new CalcGradientService(startIndex, endIndex, targetParser, result);
+			CalcGradientServices[m] = new CalcGradientService(startIndex, endIndex, targetParser, result, scale);
 			CalcGradientThread[m] = new Thread(CalcGradientServices[m]);
 			CalcGradientThread[m].start();
 		}
