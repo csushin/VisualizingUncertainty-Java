@@ -19,6 +19,7 @@ public class TiffParser {
 	private double[] size;
 	private double[] minmax;
 	private int NUMBER_OF_PROCESSORS = 16;
+	private String modelName;
 	
 	
 	public class FindMaxMinThread implements Runnable{
@@ -59,6 +60,11 @@ public class TiffParser {
 	public void setMinmax(double[] minmax) {
 		this.minmax = minmax;
 	}
+	
+	public String getModelName(){
+		return this.modelName;
+	}
+	
 	private String filePath;
 	public int xoff, yoff, xSize, ySize;
 	private double[] geoInfo;
@@ -87,6 +93,12 @@ public class TiffParser {
 	public TiffParser(String filePath){
 		this.setFilePath(filePath);
 		this.parser();
+	}
+	
+	public TiffParser(String filePath, String modelName){
+		this.setFilePath(filePath);
+		this.parser();
+		this.modelName = modelName;
 	}
 	
 	public int getXoff() {

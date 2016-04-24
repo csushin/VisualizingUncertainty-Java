@@ -220,6 +220,50 @@
       fill-opacity: .125;
       stroke: #fff;
     }
+    .ui-tooltip, .arrow:after {
+      background: black;
+      border: 2px solid white;
+    }
+    .ui-tooltip {
+      padding: 10px 20px;
+      color: white;
+      border-radius: 20px;
+      font: bold 14px "Helvetica Neue", Sans-Serif;
+      text-transform: uppercase;
+      box-shadow: 0 0 7px black;
+    }
+    .arrow {
+      width: 70px;
+      height: 16px;
+      overflow: hidden;
+      position: absolute;
+      left: 50%;
+      margin-left: -35px;
+      bottom: -16px;
+    }
+    .arrow.top {
+      top: -16px;
+      bottom: auto;
+    }
+    .arrow.left {
+      left: 20%;
+    }
+    .arrow:after {
+      content: "";
+      position: absolute;
+      left: 20px;
+      top: -20px;
+      width: 25px;
+      height: 25px;
+      box-shadow: 6px 5px 9px -9px black;
+      -webkit-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+      transform: rotate(45deg);
+    }
+    .arrow.top:after {
+      bottom: -20px;
+      top: auto;
+    }
  
 
   </style>
@@ -244,6 +288,7 @@
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/lib/jscolor.js"></script>
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/lib/d3.parcoords.js"></script>
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/lib/d3.tip.js"></script>
+  <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/lib/hex-to-rgb.min.js"></script>
   <!--<script type=  "text/javascript" src="https://syntagmatic.github.io/parallel-coordinates/d3.parcoords.js"></script>-->
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/bootstrap/js/bootstrap.min.js"></script>
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/FuzzyThresholdImgLoader.js"></script>
@@ -262,6 +307,8 @@
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/scattermatrices.js"></script>
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/drawVH.js"></script>
   <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/polybrush.js"></script>
+  <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/similarity.js"></script>
+  <script type = "text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/ensembleClst.js"></script>
 </head>
 
 <body>
@@ -272,13 +319,15 @@
     <li id="MultiEnsembleTab" role="presentation"><a href="#multipleEnsemblesView" aria-controls="multipleEnsemblesView" role="tab" data-toggle="tab">Multi-ensembles Research</a></li>
     <li id="ScatterMatrixTab" role="presentation"><a href="#scatterMatrixView" aria-controls="scatterMatrixView" role="tab" data-toggle="tab">Scatter Matrix</a></li>
     <li id="TransferFunctionTab" role="presentation"><a href="#transferfunctionView" aria-controls="transferfunctionView" role="tab" data-toggle="tab">Transfer Function Research</a></li>
+    <li id="SimilarityTab" role="presentation"><a href="#SimilarityView" aria-controls="SimilarityView" role="tab" data-toggle="tab">Similarity Research</a></li>
+    <li id="EnsembleClusteringTab" role="presentation"><a href="#EnsembleClustering" aria-controls="EnsembleClustering" role="tab" data-toggle="tab">Ensemble Clustering Research</a></li>
   </ul>
   </div>
 
   <div class="tab-content row container-fluid" style="height: 95%; width: 100%">
     <div role="tabpanel" class=" tab-pane row container-fluid" style="height: 100%" id="multipleEnsemblesView">
       <div class="row" style="height: 50%; border: 1px dotted nopadding" id="multiEnsemble_row1">
-        <div class="col-xs-12 col-sm-9 col-md-9 col-lg-9" style="height:100%;" id="MultiEnsembleSingleMap">
+        <div class="col-xs-12 col-sm-9 col-md-9 col-lg-9 " style="height:100%;" id="MultiEnsembleSingleMap">
           <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 16%; border: 1px dotted" id="MultiEnsembleSingleMap_paramDiv">
             <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 nopadding" style="height: 100%">
             <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height:30%">
@@ -345,6 +394,8 @@
               <option>CV</option>
               <option>Skewness</option>
               <option>Kurtosis</option>
+              <option>Entropy</option>
+              <option>QS</option>
             </select>
             <label for="MultiEnsembleSinglePlotParamSelector">Y Ensemble Metric:</label>
             <select type="select" id="YMultiEnsembleSinglePlotParamSelector">
@@ -352,8 +403,10 @@
               <option selected="selected">Std</option>
               <option>IQR</option>
               <option>CV</option>
-              <option >Skewness</option>
+              <option>Skewness</option>
               <option>Kurtosis</option>
+              <option>Entropy</option>
+              <option>QS</option>
             </select>
             <input type="radio" name="EnsembleOrModelScatterPlot" value="0" onclick="switch2EnsembleSP(0);">Switch to models
             <input type="radio" name="EnsembleOrModelScatterPlot" value="1" checked = "checked" onclick="switch2EnsembleSP(1);">Switch to ensemble (Spatial Aggregation)
@@ -476,6 +529,8 @@
                 <option>IQR</option>
                 <option>QuadraticScore</option>
                 <option>Median</option>
+                <option>Skewness</option>
+                <option>Kurtosis</option>
               </select>
               <label for="scatterplotX">Select Y-axis metric:</label>
               <select id="scatterplotY">
@@ -486,6 +541,8 @@
                 <option>IQR</option>
                 <option>QuadraticScore</option>
                 <option>Median</option>
+                <option>Skewness</option>
+                <option>Kurtosis</option>
               </select>
             </div>
             <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" id="scatterplotDiv"></div>
@@ -509,10 +566,134 @@
       </div>
     </div>
     <div role="tabpanel" class=" tab-pane row container-fluid nopadding" style="height: 100%" id="scatterMatrixView">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="height:3%; border: 1px dotted" id="scatterMatrixViewControlContainer">
+        <label for="ScatterMatrixVariable">Select Variable:</label>
+        <select id="ScatterMatrixVariable">
+          <option>Precipitation</option>
+          <option>TemperatureMin</option>
+          <option>TemperatureMax</option>
+          <option>Runoff</option>
+        </select>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="height:97%;" id="scatterMatrixViewContainer">
+      </div>
     </div>
     <div role="tabpanel" class=" tab-pane row container-fluid nopadding" style="height: 100%" id="transferfunctionView">
-    </div>
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="height:5%; border: 1px dotted" id="TFControlContainer">
+        <label for="TFVariable">Select Variable:</label>
+        <select id="TFVariable">
+          <option selected="selected">Precipitation</option>
+          <option>TemperatureMin</option>
+          <option>TemperatureMax</option>
+          <option>Runoff</option>
+        </select>
+        <label for="TFMetricType">Select Metric Type: </label>
+        <select id="TFMetricType">
+          <option selected="selected">EnsembleStatOfTimeMean</option>
+          <option>EnsembleStatOfTimeStd</option>
+          <option>TimeMean</option>
+          <option>TimeCV</option>
+          <option>TimeStd</option>
+          <option>TimeIQR</option>
+          <option>TimeEntropy</option>
+          <option>TimeQuadraticScore</option>
+        </select>
+        <label for="TFKeywordSelect">Select Key Word:</label>
+        <select id="TFKeywordSelect">
+          <option selected="selected">EnsembleMean</option>
+          <option>EnsembleStd</option>
+          <option>EnsembleCV</option>
+          <option>EnsembleIQR</option>
+          <option>EnsembleEntropy</option>
+          <option>EnsembleQuadraticScore</option>
+          <option>CCCma-CanESM2_CCCma-CanRCM4</option>
+          <option>CCCma-CanESM2_SMHI-RCA4</option>
+          <option>CNRM-CERFACS-CNRM-CM5_CLMcom-CCLM4-8-17</option>
+          <option>CNRM-CERFACS-CNRM-CM5_SMHI-RCA4</option>
+          <option>CSIRO-QCCCE-CSIRO-Mk3-6-0_SMHI-RCA4</option>
+          <option>ICHEC-EC-EARTH_CLMcom-CCLM4-8-17</option>
+          <option>ICHEC-EC-EARTH_DMI-HIRHAM5</option>
+          <option>ICHEC-EC-EARTH_KNMI-RACMO22T</option>
+          <option>ICHEC-EC-EARTH_SMHI-RCA4</option>
+          <option>IPSL-IPSL-CM5A-MR_SMHI-RCA4</option>
+          <option>MIROC-MIROC5_SMHI-RCA4_v1</option>
+          <option>MOHC-HadGEM2-ES_CLMcom-CCLM4-8-17</option>
+          <option>MOHC-HadGEM2-ES_SMHI-RCA4</option>
+          <option>MOHC-HadGEM2-ES_KNMI-RACMO22T_v1</option>
+          <option>MPI-M-MPI-ESM-LR_CLMcom-CCLM4-8-17</option>
+          <option>MPI-M-MPI-ESM-LR_SMHI-RCA4</option>
+          <option>NCC-NorESM1-M_SMHI-RCA4</option>
+          <option>NOAA-GFDL-GFDL-ESM2M_SMHI-RCA4</option>
+        </select>
+        <label for="TFScale">Select Scale Type:</label>
+        <select id="TFScale">
+          <option>LogScale</option>
+          <option selected="selected">DoNotScale</option>
+        </select>
+        <button type="button" class="btn btn-primary" id="addTFScatterPlot">Add</button>
+        <button type="button" class="btn btn-primary" id="clearAllScatterPlot">Clear All</button>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12" style="height: 95%; border: 1px dotted" id="TFScatterplotContainer">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 100%; overflow: auto; overflow-x: hidden" id="TFScatterplotChildContainer">
+        </div>
+      </div>
 
+    </div>
+    <div role="tabpanel" class=" tab-pane row container-fluid nopadding" style="height: 100%" id="SimilarityView">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 7%;">
+          <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 60%; border: 1px dotted" id="SimilarityControl">
+            <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8 nopadding" style="height: 100%; border: 1px dotted" id="SimilarityMeasures">
+              <label for="dataTypeSelect">Select data type:</label>
+              <select id="dataTypeSelect">
+                <option selected="selected">Precipitation</option>
+                <option>TemperatureMin</option>
+                <option>TemperatureMax</option>
+              </select>
+              <label for="SimilarityMeasuresSelect">Select similarity measures:</label>
+              <select id="SimilarityMeasuresSelect">
+                <option selected="selected">Euclidean</option>
+                <option>Cosine</option>
+                <option>L1Norm</option>
+                <option>CosinePlusL1Norm</option>
+              </select>
+              <label for="ShapeDescriptorSelect">Select involved dimensions:</label>
+              <select id="ShapeDescriptorSelect">
+                <option selected="selected">Only Moments</option>
+                <option>All Metrics</option>
+              </select>
+              <label for="MaxMinSimilaritySelect">Select similarity:</label>
+              <select id="MaxMinSimilaritySelect">
+                <option selected="selected">MaximumDistance</option>
+                <option>MinimumDistance</option>
+                <option>ByThresholdsCount</option>
+                <option>ByThresholdsIndex</option>
+              </select>
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3 nopadding" style="height: 100%; display: block" id="SimilarityColorMapping">
+              <input type="radio" name="SimilarityLegend" value="GCM" onclick="switch2SimilarityColor('GCM');">By Global Climate Model
+              <input type="radio" name="SimilarityLegend" value="RCM" onclick="switch2SimilarityColor('RCM');">By Regional Climate Model
+              <input type="radio" name="SimilarityLegend" value="All" checked = "checked" onclick="switch2SimilarityColor('All');">By All
+            </div>
+            <div class="col-xs-3 col-sm-3 col-md-3 col-lg-3" style="height: 100%; display: none" id="SimilarityThreshold">
+              <label for="SimilarityThdSlider" id="SimilarityThdSliderLabel" style="float:left;" >Value:</label>
+              <input type="range" min="0" value="1.0" max="2.0" step="0.1" onchange="changeSimilarityThreshold(this.value);" style="width:75%; float:right" id="SimilarityThdSlider" >
+            </div>
+            <input type="button" name="confirmSimilarity" value="Update" onclick="updateSimilarityMap()">
+          </div>
+          <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 40%; border: 1px dotted" id="SimilarityLegend"></div>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 93%; border: 1px dotted" id="SimilarityMap"></div>
+    </div>
+    <div role="tabpanel" class=" tab-pane row container-fluid nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClustering">
+      <div class="col-xs-12 col-sm-12 col-md-5 col-lg-5 nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClstMap"></div>
+      <div class="col-xs-12 col-sm-12 col-md-7 col-lg-7 nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClstPanel">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 40%; border: 1px dotted" id="EnsembleClstOthers"></div>
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 60%; border: 1px dotted" id="EnsembleClstColors">
+          <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8 nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClstMat"></div>
+          <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4 nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClstLegend"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <script type="text/javascript" src="http://watersvr.dtn.asu.edu:8880/javascript/metrics/map.js"></script>

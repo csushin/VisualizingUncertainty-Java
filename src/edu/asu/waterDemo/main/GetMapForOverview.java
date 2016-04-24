@@ -110,8 +110,8 @@ public class GetMapForOverview {
 				_variable = "tasmin_HIST";
 			if(variable.equals("TemperatureMax"))
 				_variable = "tasmax_HIST";
-			this.metricDir = this.basisDir + _variable + "/EnsembleStatOfTimeMean/";
-			this.targetPath = this.metricDir + "Ensemble" + metricType + "OfTimeMean.tif";
+			this.metricDir = this.basisDir + _variable + "/EnsembleStatOfTime" + metricType + "/";
+			this.targetPath = this.metricDir + "EnsembleMeanOfTime" + metricType + ".tif";
 		}
 		else{
 			this.targetPath = getAllFiles(this.metricDir, key);

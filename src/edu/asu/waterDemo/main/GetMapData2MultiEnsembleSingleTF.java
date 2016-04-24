@@ -48,14 +48,16 @@ public class GetMapData2MultiEnsembleSingleTF {
 		private double[] thresholds;
 		private String[] tfFunction;
 		private GenerateTiles tile;
+		private String scale;
 		
-		public DrawOverviewMapThreads(int startIndex, int endIndex, TiffParser Parser, double[] thresholds, String[] tfFucntion, GenerateTiles tile){
+		public DrawOverviewMapThreads(String scale, int startIndex, int endIndex, TiffParser Parser, double[] thresholds, String[] tfFucntion, GenerateTiles tile){
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.parser = Parser;
 			this.thresholds = thresholds;
 			this.tfFunction = tfFucntion;
 			this.tile = tile;
+			this.scale = scale;
 		}
 		
 		@Override
@@ -67,6 +69,10 @@ public class GetMapData2MultiEnsembleSingleTF {
 				double lng = this.parser.getUlLatlng()[1] + w*this.parser.getGeoInfo()[1];
 				double value = this.parser.getData()[index];
 				try {
+					if(this.scale.equals("true")){
+						if(!Double.isNaN(value) && value!=-1)
+							value = Math.log(value);
+					}
 					this.tile.drawTiles(value, this.thresholds, this.tfFunction, lat, lng);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -89,7 +95,8 @@ public class GetMapData2MultiEnsembleSingleTF {
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable,
 			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
 			@QueryParam("uniformRange") @DefaultValue("null") String uniformRange,
-			@QueryParam("alpha") @DefaultValue("null") String alpha){
+			@QueryParam("alpha") @DefaultValue("null") String alpha,
+			@QueryParam("scale") @DefaultValue("null") String scale){
 		GetMapData2MultiEnsembleSingleTFBean result = new GetMapData2MultiEnsembleSingleTFBean();
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
@@ -132,6 +139,11 @@ public class GetMapData2MultiEnsembleSingleTF {
 				globalMinmax[1] = comparedMinmax[1];
 		}
 		
+		if(scale.equals("true")){
+			globalMinmax[0] = Math.log(globalMinmax[0]);
+			globalMinmax[1] = Math.log(globalMinmax[1]);
+		}
+		
 		
 		double[] _thresholds = new double[colortf.length-1];
 		for(int i=0; i<colortf.length-1; i++){
@@ -149,7 +161,7 @@ public class GetMapData2MultiEnsembleSingleTF {
 			int h2 = (i+1) * delta;
 			int startIndex = h1 * tgtWidth;
 			int endIndex =  h2 * tgtWidth;
-			drawOverviewMapService[i] = new DrawOverviewMapThreads(startIndex, endIndex, targetparser, _thresholds, colortf, tile);
+			drawOverviewMapService[i] = new DrawOverviewMapThreads(scale, startIndex, endIndex, targetparser, _thresholds, colortf, tile);
 			drawOverviewMapThread[i] = new Thread(drawOverviewMapService[i]);
 			drawOverviewMapThread[i].start();
 		}

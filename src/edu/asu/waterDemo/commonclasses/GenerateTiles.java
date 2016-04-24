@@ -212,6 +212,28 @@ public class GenerateTiles {
 			this.getImg().setRGB(wImg, hImg, color);		
 	}
 	
+	
+	//for similarity map
+	public void drawTile(int index, String[] tfFunction, double lat, double lng){
+		LatLng latLng = new LatLng(lat, lng);
+		Point2D pt = this.latLngToLayerPoint(latLng);
+		int wImg = (int) (pt.getX() - this.getPixelSW().getX());
+		int hImg = (int) (pt.getY() - this.getPixelNE().getY());
+		int alpha = this.getAlpha();
+		if(index>=0){
+			Color color = parse(tfFunction[index]);
+			int colorHex = (alpha<<24) | (color.getRed()<<16) | (color.getGreen()<<8) | color.getBlue();
+			if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
+				this.getImg().setRGB(wImg, hImg, colorHex);
+		}
+		else{
+			int colorHex = (0<<24) | (255<<16) | (255<<8) | 255;
+			if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
+				this.getImg().setRGB(wImg, hImg, colorHex);
+		}
+		
+	}
+	
 	private int indexAlpha(double[] values){
 		for(double each : values){
 			if(each == -1 || Double.isNaN(each))
@@ -223,7 +245,7 @@ public class GenerateTiles {
 //	return the value from 0~255
 	private int indexAlpha(double val, double meanVal){
 //		set the full transparency for those NaN Values
-		if(val == -1 || Double.isNaN(val) || meanVal == -1 || meanVal == INFINITE)
+		if(val == -1 || Double.isNaN(val) || meanVal == -1 || meanVal == INFINITE || Double.isNaN(meanVal))
 			return 0;
 		int result = 0;
 		double min=0, max=0;
@@ -261,7 +283,7 @@ public class GenerateTiles {
 		else if(this.getType().equals("treeVis") || this.getType().equals("fuzzyThresholdVis") || this.getType().equals("overviewVis")){
 			result = 255;
 		}
-		else if(this.getType().equals("EnsembleSingleTF")){
+		else if(this.getType().equals("EnsembleSingleTF") || this.getType().equals("EnsClstValMapping")){
 			result = this.alpha;
 		}
 		else{
@@ -274,7 +296,7 @@ public class GenerateTiles {
 	
 //	return the value from 0~255 in the order of r/g/b
 	private int[] indexRGB(double val){
-		if(this.getType().equals("predJoint") || this.getType().equals("evd")){
+		if(this.getType().equals("predJoint") || this.getType().equals("evd") || this.getType().equals("EnsClstValMapping")){
 			int[] result = new int[3];
 			if(val==INFINITE){
 				result[0] = 0;

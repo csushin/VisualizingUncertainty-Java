@@ -49,13 +49,15 @@ public class GetVHData {
 		public TiffParser parser;
 		public String scale;
 		public ArrayList<VHDataUnit> result;
-			
-		public CalcGradientService(int startIndex, int endIndex, TiffParser parser, ArrayList<VHDataUnit> result, String scale){
+		public String derivative;
+		
+		public CalcGradientService(int startIndex, int endIndex, TiffParser parser, ArrayList<VHDataUnit> result, String scale, String derivative){
 			this.startIndex = startIndex;
 			this.endIndex = endIndex;
 			this.parser = parser;
 			this.result = result;
 			this.scale = scale;
+			this.derivative = derivative;
 		}
 
 		@Override
@@ -87,11 +89,23 @@ public class GetVHData {
 					}
 					if(ReasonableValue(leftVal) && ReasonableValue(rightVal)
 							&& ReasonableValue(topVal) && ReasonableValue(bottomVal)){
-						double gradient_x = (rightVal - leftVal)/2.0;
-						double gradient_y = (topVal - bottomVal)/2.0;
-						double gradient = Math.sqrt(Math.pow(gradient_x, 2.0) + Math.pow(gradient_y, 2.0));
-						VHDataUnit unit = new VHDataUnit(value, gradient, 1);
-						this.result.add(unit);
+						if(this.derivative.equals("first")){
+							double gradient_x = (rightVal - leftVal)/2.0;
+							double gradient_y = (topVal - bottomVal)/2.0;
+							double gradient = Math.sqrt(Math.pow(gradient_x, 2.0) + Math.pow(gradient_y, 2.0));
+							VHDataUnit unit = new VHDataUnit(value, gradient, 1);
+							this.result.add(unit);
+						}
+						else{
+							double logValue = value;
+							if(this.scale.equals("true"))
+								logValue = Math.log(logValue);
+							double gradient_x = (rightVal + leftVal - 2*logValue);
+							double gradient_y = (topVal + bottomVal - 2*logValue);
+							double gradient = Math.sqrt(Math.pow(gradient_x, 2.0) + Math.pow(gradient_y, 2.0));
+							VHDataUnit unit = new VHDataUnit(value, gradient, 1);
+							this.result.add(unit);
+						}
 					}
 				}
 			}
@@ -156,7 +170,8 @@ public class GetVHData {
 			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("dataLevel") @DefaultValue("null") String dataLevel,
 			@QueryParam("dataNameKeyword") @DefaultValue("null") String dataNameKeyword,
-			@QueryParam("scale") @DefaultValue("null") String scale){
+			@QueryParam("scale") @DefaultValue("null") String scale,
+			@QueryParam("derivative") @DefaultValue("null") String derivative){
 		String _dataType = dataType;
 		if(dataType.equals("Precipitation"))
 			_dataType = "pr_HIST";
@@ -175,7 +190,7 @@ public class GetVHData {
 			int endIndex = (m+1)*delta;
 			if(m == NUMBER_OF_PROCESSORS - 1)
 				endIndex = (int) (targetParser.getSize()[0]*targetParser.getSize()[1] - 1);
-			CalcGradientServices[m] = new CalcGradientService(startIndex, endIndex, targetParser, result, scale);
+			CalcGradientServices[m] = new CalcGradientService(startIndex, endIndex, targetParser, result, scale, derivative);
 			CalcGradientThread[m] = new Thread(CalcGradientServices[m]);
 			CalcGradientThread[m].start();
 		}
