@@ -316,7 +316,7 @@ public class DendrogramPanel extends JPanel {
         ClusteringAlgorithm alg = new DefaultClusteringAlgorithm();
         Cluster cluster = alg.performClustering(distances, names, new AverageLinkageStrategy());
         cluster.getDistance();
-        cluster.toConsole(0);
+//        cluster.toConsole(0);
         // to compute cluster membership divergence
         // we can go through every pair of node and find the nearest cluster that contains the pair
         // and get the size of the cluster(in here it is the weight value)

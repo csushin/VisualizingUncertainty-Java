@@ -52,6 +52,7 @@ public class GenerateTiles {
 
 
 	//	To get the initialTopLeftMapPoint, we should call the map.getPixelOrigin() function in leaflet	
+	// Specify the transfer function
 	public GenerateTiles(String outputfile, Point2D mapOrigin, String type, int zoomLevel, String[] tfFunction){
 		this.setOutputPath(outputfile);	
 		this.setType(type);
@@ -61,6 +62,7 @@ public class GenerateTiles {
 	}	
 	
 	//	To get the initialTopLeftMapPoint, we should call the map.getPixelOrigin() function in leaflet	
+	// Does not specify the tranfer function
 	public GenerateTiles(String outputfile, Point2D mapOrigin, String type, int zoomLevel){
 		this.setOutputPath(outputfile);	
 		this.setType(type);

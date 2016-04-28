@@ -17,7 +17,7 @@
 
     .node circle {
       fill: #fff;
-      stroke: steelblue;
+      stroke: gray;
       stroke-width: 3px;
     }
 
@@ -682,7 +682,10 @@
           </div>
           <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 40%; border: 1px dotted" id="SimilarityLegend"></div>
       </div>
-      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 93%; border: 1px dotted" id="SimilarityMap"></div>
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 nopadding" style="height: 93%; border: 1px dotted" id="SimilarityMain">
+        <div class="col-xs-12 col-sm-12 col-md-7 col-lg-7 nopadding" style="height: 100%; border: 1px dotted" id="SimilarityMap"></div>
+        <div class="col-xs-12 col-sm-12 col-md-5 col-lg-5 nopadding" style="height: 100%; border: 1px dotted" id="SimilarityTree"></div>
+      </div>
     </div>
     <div role="tabpanel" class=" tab-pane row container-fluid nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClustering">
       <div class="col-xs-12 col-sm-12 col-md-5 col-lg-5 nopadding" style="height: 100%; border: 1px dotted" id="EnsembleClstMap"></div>

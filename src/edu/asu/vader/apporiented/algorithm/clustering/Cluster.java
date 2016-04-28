@@ -17,7 +17,10 @@
 package edu.asu.vader.apporiented.algorithm.clustering;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import edu.asu.vader.apporiented.algorithm.clustering.Cluster;
 
 public class Cluster {
 
@@ -135,16 +138,24 @@ public class Cluster {
         return count;
     }
 
-    public void toConsole(int indent) {
-        for (int i = 0; i < indent; i++) {
-            System.out.print("  ");
-
+    public ArrayList<HashMap<String, String>> toConsole(int indent, ArrayList<HashMap<String, String>> prev) {
+    	for (int i = 0; i < indent; i++) {
+           System.out.print("  ");
         }
-        String name = getName() + (isLeaf() ? " (leaf)" : "") + (distance != null ? "  distance: " + distance : "");
+        String name = "name:" + (getName() + (isLeaf() ? " (leaf)" : "")) + "," + 
+        		"distance:"+ ((distance != null ? "distance: " + distance : ""));
+        HashMap<String, String> temp = new HashMap<String, String>();
+        temp.put("name", getName() + (isLeaf() ? " (leaf)" : ""));
+        temp.put("distance", (distance != null ? ""+distance : ""));
+        temp.put("parent", this.getParent()==null?"root":this.getParent().name);
+        temp.put("level", String.valueOf(indent));
         System.out.println(name);
+        prev.add(temp);
         for (Cluster child : getChildren()) {
-            child.toConsole(indent + 1);
+           child.toConsole(indent + 1, prev);
         }
+        return prev;
+        
     }
     
     public Double computeCMDDistance(String modelA, String modelB){

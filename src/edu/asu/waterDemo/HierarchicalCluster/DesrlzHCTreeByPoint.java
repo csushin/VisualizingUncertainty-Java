@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -29,6 +30,15 @@ import edu.asu.waterDemo.main.GetVHData.VHDataUnit;
 
 @Path("/getHCTree")
 public class DesrlzHCTreeByPoint {
+	public class clusterData {
+		public double distance;
+		public double weight;
+		public String name;
+	}
+	public class TreeData{
+		public String structureDescription;
+		public String distanceDescription;
+	}
 	private String[] modelList = {
 			"CCCma-CanESM2_CCCma-CanRCM4",
 		    "CCCma-CanESM2_SMHI-RCA4",
@@ -69,9 +79,10 @@ public class DesrlzHCTreeByPoint {
 	@GET
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
-	public String query(
+	public ArrayList<HashMap<String, String>> query(
 			@QueryParam("lat") @DefaultValue("null") String lat,
 			@QueryParam("lng") @DefaultValue("null") String lng){
+		TreeData result = new TreeData();
 		HashMap<String, File> filePath = new HashMap<String, File>();
 		HashMap<String, Band> bandParsers = new HashMap<String, Band>();
 		filePath = getAllFiles(basisDir, "OverallSum");
@@ -118,6 +129,9 @@ public class DesrlzHCTreeByPoint {
 		}
 		ClusteringAlgorithm alg = new DefaultClusteringAlgorithm();
 		Cluster cluster = alg.performClustering(dist, names, new AverageLinkageStrategy());
+		cluster.getDistance();
+		ArrayList<HashMap<String, String>> test = new ArrayList<HashMap<String, String>>();
+		test = cluster.toConsole(0, test);
 		for(int m=0; m<names.length-1; m++){
 		  	for(int n=m+1; n<names.length; n++){
 		  		if(dist[m][n] == 0){
@@ -129,7 +143,7 @@ public class DesrlzHCTreeByPoint {
 		  		
 		  	}
 		}
-		return Arrays.deepToString(cmddist);
+		return test;
 	}
 	
 	// module for getting all files within keywords, loop while
