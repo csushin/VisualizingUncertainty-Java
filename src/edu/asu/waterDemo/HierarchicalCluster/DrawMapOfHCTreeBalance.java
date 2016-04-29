@@ -2,6 +2,7 @@ package edu.asu.waterDemo.HierarchicalCluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -21,6 +22,8 @@ import edu.asu.waterDemo.commonclasses.TiffParser;
 public class DrawMapOfHCTreeBalance {
 	public class DrawMapOfHCTreeBalanceBean{
 		public String imgStr;
+		public int max;
+		public int min;
 	}
 
 	private String basisDir;
@@ -73,25 +76,36 @@ public class DrawMapOfHCTreeBalance {
 		}
 	}
 	
+	/*
+	 * Parameters:
+	 * zoomLevel should be Integer number only.
+	 * alpha should be a Integer number from 0~255 only
+	 * colorTable here is without letters "rgb()" and is in the form of "255,0,0" only
+	 */
 	@GET
 	@JSONP(queryParam = "callback", callback = "eval")
 	@Produces({"application/x-javascript"})
 	public DrawMapOfHCTreeBalanceBean query(
 			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
+			@QueryParam("alpha") @DefaultValue("null") String alpha,
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable){
 		DrawMapOfHCTreeBalanceBean result = new DrawMapOfHCTreeBalanceBean();
 		String targetPath = this.basisDir + "Result.tif";
 		TiffParser parser = new TiffParser(targetPath);
 		double max = parser.getMinmax()[1];
 		double min = parser.getMinmax()[0];
+		System.out.println("max is " + max + " min is: " + min);
+		result.max = (int) max;
+		result.min = (int) min;
 		String imgPath = this.basisDir + "Result_zoomLevel"+ zoomLevel +".png";
 		String[] colortf = colorTable.split("&");
-		GenerateTiles tile = new GenerateTiles(imgPath, null, "overviewVis", Integer.valueOf(zoomLevel), colortf);
+		GenerateTiles tile = new GenerateTiles(imgPath, null, "EnsembleSingleTF", Integer.valueOf(zoomLevel), colortf);
 		double[] size = parser.getSize();
 		LatLng southwest = new LatLng(parser.getLrLatlng()[0], parser.getUlLatlng()[1]);
 		LatLng northeast = new LatLng(parser.getUlLatlng()[0], parser.getLrLatlng()[1]);
 		tile.processWidthHeight((int) size[1], (int) size[0], southwest, northeast);
 		tile.initializeBufferImage();
+		tile.setAlpha(Integer.valueOf(alpha));// Othewise, the alpha is set as 255 in default
 		File imgFile = new File(imgPath);
 		// look for base64 img string
 		// if the img already exists, then convert it to base64 and return the string
@@ -105,6 +119,7 @@ public class DrawMapOfHCTreeBalance {
 		for(int i=0; i<colortf.length-1; i++){
 			_thresholds[i] = (i+1)/(double)colortf.length*(max - min)+min;
 		}
+		System.out.println(Arrays.toString(_thresholds));
 		int tgtHeight = (int)size[0];
 		int tgtWidth = (int)size[1];
 		int NUMBER_OF_PROCESSORS = 16;
@@ -130,7 +145,8 @@ public class DrawMapOfHCTreeBalance {
 			e.printStackTrace();
 		}
 		
-		result.imgStr = tile.writeBufferImage();
+		// use this to generate the image and encode it to base64 string
+		result.imgStr = tile.encodeFromBufferImgToBase64();
 		
 		return result;
 	}

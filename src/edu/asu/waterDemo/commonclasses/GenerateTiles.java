@@ -152,6 +152,7 @@ public class GenerateTiles {
         return imageString;		
 	}
 	
+	
 	public void drawTiles(double mean, double stat, int originIndex, double lat, double lng) throws IOException{
 		LatLng latLng = new LatLng(lat, lng);
 		Point2D pt = this.latLngToLayerPoint(latLng);
@@ -166,6 +167,9 @@ public class GenerateTiles {
 		
 	}
 	
+	/*
+	 * DrawTiles by 
+	 */
 	public void drawTiles(double[] values, double[] thresholds, JSONObject tfFunction, HashMap<String, Color> selectedNodes, double lat, double lng) throws IOException{
 		LatLng latLng = new LatLng(lat, lng);
 		Point2D pt = this.latLngToLayerPoint(latLng);
@@ -180,6 +184,9 @@ public class GenerateTiles {
 		
 	}
 	
+	/*
+	 * DrawTiles by a single value by given a set of thresholds and transfer function for different sections of the thresholds
+	 */
 	public void drawTiles(double value, double[] thresholds, String[] tfFunction, double lat, double lng) throws IOException{
 		LatLng latLng = new LatLng(lat, lng);
 		Point2D pt = this.latLngToLayerPoint(latLng);
@@ -194,6 +201,10 @@ public class GenerateTiles {
 		
 	}
 	
+	/*
+	 * DrawTiles by 2d mapping
+	 * xpos, ypos represent the position of the value in the 2d mapping matrix
+	 */
 	public void drawTiles(int xpos, int ypos, double[] xThresholds, double[] yThresholds, String[] tfFunction, double[] xMinmax, double[] yMinmax, double lat, double lng){
 		LatLng latLng = new LatLng(lat, lng);
 		Point2D pt = this.latLngToLayerPoint(latLng);
@@ -214,8 +225,10 @@ public class GenerateTiles {
 			this.getImg().setRGB(wImg, hImg, color);		
 	}
 	
-	
-	//for similarity map
+	/*
+	 * For similarity map
+	 * DrawTiles in drawing similarity map and color by different GCM, RCM or all which is given as index parameters
+	 */
 	public void drawTile(int index, String[] tfFunction, double lat, double lng){
 		LatLng latLng = new LatLng(lat, lng);
 		Point2D pt = this.latLngToLayerPoint(latLng);
@@ -384,7 +397,7 @@ public class GenerateTiles {
 			}
 		}
 		if(color == null)
-			System.out.println("Value is " + val);
+			System.out.println("Color is null and Value is " + val);
 		result[0] = color.getRed();
 		result[1] = color.getGreen();
 		result[2] = color.getBlue();

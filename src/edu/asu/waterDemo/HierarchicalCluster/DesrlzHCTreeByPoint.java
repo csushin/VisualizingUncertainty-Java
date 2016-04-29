@@ -147,7 +147,7 @@ public class DesrlzHCTreeByPoint {
 	}
 	
 	// module for getting all files within keywords, loop while
-		public HashMap<String, File> getAllFiles(String directoryName, String keyword) {
+	public HashMap<String, File> getAllFiles(String directoryName, String keyword) {
 				    File directory = new File(directoryName);
 				    HashMap<String, File> result = new HashMap<String, File>();
 				    // get all the files from a directory
