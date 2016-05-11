@@ -72,7 +72,7 @@ public class DrawMapOfHCTreeBalance {
 		if(osNameMatch.contains("windows")) {
 			this.basisDir = context.getRealPath("img") + File.separatorChar;
 		}else{
-			this.basisDir = "/work/asu/data/CalculationResults/pr_HIST/SimilarityResults/HierarchicalClst/TotalDistance/";
+			this.basisDir = "/work/asu/data/CalculationResults/";
 		}
 	}
 	
@@ -88,9 +88,17 @@ public class DrawMapOfHCTreeBalance {
 	public DrawMapOfHCTreeBalanceBean query(
 			@QueryParam("zoomLevel") @DefaultValue("null") String zoomLevel,
 			@QueryParam("alpha") @DefaultValue("null") String alpha,
+			@QueryParam("dataType") @DefaultValue("null") String dataType,
 			@QueryParam("colorTable") @DefaultValue("null") String colorTable){
 		DrawMapOfHCTreeBalanceBean result = new DrawMapOfHCTreeBalanceBean();
-		String targetPath = this.basisDir + "Result.tif";
+		String _dataType = dataType;
+		if(dataType.equals("Precipitation"))
+			_dataType = "pr_HIST";
+		if(dataType.equals("TemperatureMin"))
+			_dataType = "tasmin_HIST";
+		if(dataType.equals("TemperatureMax"))
+			_dataType = "tasmax_HIST";
+		String targetPath = this.basisDir + _dataType + "/SimilarityResults/HierarchicalClst/TotalDistance/Result.tif";
 		TiffParser parser = new TiffParser(targetPath);
 		double max = parser.getMinmax()[1];
 		double min = parser.getMinmax()[0];

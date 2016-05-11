@@ -18,7 +18,7 @@ package edu.asu.vader.apporiented.algorithm.clustering;
 
 public class ClusterPair implements Comparable<ClusterPair> {
 
-    private volatile static long globalIndex = 0;
+    private static long globalIndex = 0;
 
     private Cluster lCluster;
     private Cluster rCluster;

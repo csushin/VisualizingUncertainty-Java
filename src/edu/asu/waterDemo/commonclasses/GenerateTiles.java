@@ -249,6 +249,35 @@ public class GenerateTiles {
 		
 	}
 	
+	/*
+	 * DrawTiles for  class Hierarchical clustering, using color RGB: 255,0,29 where G is the changing variable from 0~255
+	 */
+	public void drawTiles(double value, double[] valMinMax, String[] colortf, int changingColor, double lat, double lng, boolean hierarchical) throws IOException{
+		if(hierarchical){
+			LatLng latLng = new LatLng(lat, lng);
+			Point2D pt = this.latLngToLayerPoint(latLng);
+			int wImg = (int) (pt.getX() - this.getPixelSW().getX());
+			int hImg = (int) (pt.getY() - this.getPixelNE().getY());
+			int alpha = 0;
+			int[] rgb = new int[3];
+			if(!Double.isNaN(value) && value!=18){
+				alpha = 255;
+				for(int i=0; i<rgb.length; i++){
+					if(i == changingColor){
+						rgb[i] = (int)((value - valMinMax[0])/(valMinMax[1] - valMinMax[0])*255);
+					}
+					else{
+						rgb[i] = Integer.valueOf(colortf[i]);
+					}
+				}
+			}
+			int color = (alpha<<24) | (rgb[0]<<16) | (rgb[1]<<8) | rgb[2];
+//			System.out.println("wImg: " + wImg + " hImg: " + hImg);
+			if(wImg<this.getImg().getWidth() && hImg<this.getImg().getHeight())
+				this.getImg().setRGB(wImg, hImg, color);
+		}
+	}
+	
 	private int indexAlpha(double[] values){
 		for(double each : values){
 			if(each == -1 || Double.isNaN(each))
