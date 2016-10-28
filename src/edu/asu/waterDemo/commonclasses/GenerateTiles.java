@@ -282,7 +282,7 @@ public class GenerateTiles {
 		for(double each : values){
 			if(each == -1 || Double.isNaN(each))
 				return 0;
-		}
+		}               
 		return 200;
 	}
 	
